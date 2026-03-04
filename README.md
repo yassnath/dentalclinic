@@ -1,38 +1,67 @@
 # Klinik HealthEase
 
-**Sistem Informasi Klinik yang modern, rapi, dan siap dipakai untuk operasional harian.**
+**Klinik HealthEase** adalah website sistem informasi klinik yang dirancang untuk membuat operasional klinik berjalan lebih cepat, rapi, dan modern dalam satu platform terintegrasi.
 
-Klinik HealthEase memadukan pendaftaran online, antrian, rekam medis digital, dan pembayaran dalam satu alur yang jelas. Dibangun untuk klinik yang ingin terlihat profesional, efisien, dan terpercaya di mata pasien.
+Platform ini menghubungkan seluruh alur layanan, mulai dari pendaftaran pasien, pengelolaan jadwal dokter, rekam medis digital, pembayaran, hingga notifikasi dan komunikasi awal lewat AI assistant.
 
-**Nilai Utama**
-- Pengalaman pasien yang cepat dan nyaman sejak pendaftaran hingga pembayaran.
-- Operasional klinik lebih rapi dengan alur kerja yang terstruktur.
-- Data medis dan administratif terdokumentasi dengan jelas.
+## What This Website Delivers
 
-**Highlight Fitur**
-- Pendaftaran online dan manajemen antrian real‑time.
-- Rekam medis digital terintegrasi.
-- Manajemen jadwal dokter dan layanan klinik.
-- Pembayaran terstruktur dan mudah dipantau.
-- Notifikasi status untuk pasien.
-- QR akses cepat untuk pasien dan staf.
-- AI Customer Support untuk pertanyaan umum pasien.
+- Satu ekosistem digital untuk kebutuhan front office, dokter, admin, dan pasien.
+- Proses klinik yang lebih ringkas tanpa perpindahan sistem atau proses manual berulang.
+- Pengalaman pengguna modern, responsif, dan konsisten di desktop maupun mobile.
 
-**Role‑Based Dashboard**
-- Admin: manajemen dokter, pasien, resepsionis, pembayaran, dan laporan.
-- Dokter: daftar pasien, jadwal, rekam medis, dan tindak lanjut.
-- Resepsionis: pendaftaran, verifikasi, dan check‑in pasien.
-- Pasien: jadwal dokter, status pendaftaran, riwayat, dan tagihan.
+## Core Features
 
-**Tampilan Modern & Responsif**
-- UI klinik dengan nuansa bersih, higienis, dan profesional.
-- Responsif di mobile, tablet, dan desktop.
-- Tabel di mobile otomatis tampil sebagai kartu agar mudah dibaca.
+- **Role-Based Dashboard**
+  - Akses dan menu berbeda untuk **Admin**, **Doctor**, **Receptionist**, dan **Patient**.
 
-**Cocok Untuk**
-- Klinik gigi, klinik umum, dan klinik spesialis.
-- Institusi kesehatan yang ingin meningkatkan kecepatan layanan.
-- Tim operasional yang butuh alur kerja ringkas dan terukur.
+- **Digital Patient Registration**
+  - Form pendaftaran pasien yang mengikuti data KTP.
+  - **KTP camera OCR autofill** untuk mengisi kolom penting secara otomatis.
 
-**Siap Melangkah Lebih Jauh**
-Klinik HealthEase membantu klinik tampil lebih modern, lebih cepat, dan lebih dipercaya. Cocok untuk kamu yang ingin mengelola klinik secara serius dan terstruktur.
+- **Queue, Schedule, and Visit Flow**
+  - Pengelolaan pendaftaran kunjungan, jadwal dokter, status pasien aktif, dan alur check-in.
+
+- **Electronic Medical Records**
+  - Pencatatan rekam medis lebih terstruktur, mudah diakses sesuai peran, dan siap ditelusuri.
+
+- **Billing and Payment Management**
+  - Pembuatan dan konfirmasi pembayaran untuk mempermudah proses administratif klinik.
+
+- **Notification Center**
+  - Notifikasi status penting untuk membantu tim klinik dan pasien tetap sinkron.
+
+- **AI Customer Support Widget**
+  - Chat assistant untuk membantu pertanyaan awal pengguna secara cepat.
+
+- **Modern UI System**
+  - Light/Dark theme toggle di landing page, autentikasi, dan dashboard per role.
+  - Popup validasi dan konfirmasi yang konsisten di seluruh halaman.
+  - Layout responsif dengan pengalaman mobile yang lebih nyaman.
+
+## Why HealthEase Stands Out
+
+- **End-to-End Clinic Workflow**
+  - Semua proses utama klinik berada dalam satu website yang saling terhubung.
+
+- **Operational Efficiency**
+  - Mengurangi bottleneck administratif dan mempercepat proses harian tim.
+
+- **Better Patient Experience**
+  - Alur pendaftaran, informasi, dan tindak lanjut lebih jelas dan user-friendly.
+
+- **Scalable Architecture**
+  - Dibangun dengan stack modern untuk mendukung pengembangan fitur lanjutan.
+
+- **Consistent Product Experience**
+  - Visual, interaksi, dan validasi dirancang seragam agar penggunaan lebih intuitif.
+
+## Ideal For
+
+- Klinik yang ingin upgrade dari proses manual ke sistem digital terintegrasi.
+- Tim operasional yang membutuhkan kontrol data lebih rapi dan realtime.
+- Layanan kesehatan yang ingin menghadirkan pengalaman pasien yang lebih modern.
+
+## Product Vision
+
+Menjadikan operasional klinik lebih terukur, lebih cepat beradaptasi, dan lebih siap berkembang lewat platform digital yang praktis, profesional, dan berorientasi pada kualitas layanan.
