@@ -1,0 +1,154 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id                BigInt         @id @default(autoincrement())
+  name              String         @db.VarChar(255)
+  username          String         @unique(map: "users_username_unique") @db.VarChar(255)
+  email             String         @unique(map: "users_email_unique") @db.VarChar(255)
+  emailVerifiedAt   DateTime?      @map("email_verified_at") @db.Timestamp(0)
+  password          String         @db.VarChar(255)
+  role              String         @default("pasien") @db.VarChar(32)
+  spesialis         String?        @db.VarChar(255)
+  alamat            String?        @db.VarChar(255)
+  telepon           String?        @db.VarChar(255)
+  noHp              String?        @map("no_hp") @db.VarChar(255)
+  tanggalLahir      DateTime?      @map("tanggal_lahir") @db.Date
+  jenisKelamin      String?        @map("jenis_kelamin") @db.VarChar(32)
+  nik               String?        @db.VarChar(16)
+  noRm              String?        @unique(map: "users_no_rm_unique") @map("no_rm") @db.VarChar(30)
+  qrToken           String?        @unique(map: "users_qr_token_unique") @map("qr_token") @db.VarChar(255)
+  qrPath            String?        @map("qr_path") @db.VarChar(255)
+  roleId            BigInt?        @map("role_id")
+  rememberToken     String?        @map("remember_token") @db.VarChar(100)
+  createdAt         DateTime?      @map("created_at") @db.Timestamp(0)
+  updatedAt         DateTime?      @map("updated_at") @db.Timestamp(0)
+  jadwalDokter      JadwalDokter[]
+  pendaftarans      Pendaftaran[]  @relation("PendaftaranUser")
+  pendaftarDokter   Pendaftaran[]  @relation("PendaftaranDokter")
+  pendaftarDiterima Pendaftaran[]  @relation("PendaftaranDiterimaDokter")
+  notifikasis       Notifikasi[]
+  pembayarans       Pembayaran[]
+  rekamMedisDokter  RekamMedis[]   @relation("RekamMedisDokter")
+  rekamMedisPasien  RekamMedis[]   @relation("RekamMedisPasien")
+
+  @@map("users")
+}
+
+model Pendaftaran {
+  id                   BigInt       @id @default(autoincrement())
+  userId               BigInt       @map("user_id")
+  dokterId             BigInt?      @map("dokter_id")
+  diterimaOlehDokterId BigInt?      @map("diterima_oleh_dokter_id")
+  nama                 String       @db.VarChar(255)
+  tanggalLahir         DateTime     @map("tanggal_lahir") @db.Date
+  jenisKelamin         String       @map("jenis_kelamin") @db.VarChar(20)
+  noHp                 String       @map("no_hp") @db.VarChar(20)
+  nik                  String       @db.VarChar(20)
+  keluhan              String       @db.Text
+  tanggalKunjungan     DateTime?    @map("tanggal_kunjungan") @db.Date
+  jamKunjungan         DateTime?    @map("jam_kunjungan") @db.Time(0)
+  spesialis            String?      @db.VarChar(255)
+  status               String       @default("menunggu") @db.VarChar(255)
+  nomorUrut            Int?         @map("nomor_urut")
+  kodeAntrian          String?      @map("kode_antrian") @db.VarChar(16)
+  qrToken              String?      @map("qr_token") @db.VarChar(36)
+  qrPath               String?      @map("qr_path") @db.VarChar(255)
+  checkinAt            DateTime?    @map("checkin_at") @db.Timestamp(0)
+  checkedInAt          DateTime?    @map("checked_in_at") @db.Timestamp(0)
+  checkedInBy          BigInt?      @map("checked_in_by")
+  noShowAt             DateTime?    @map("no_show_at") @db.Timestamp(0)
+  noShowBy             BigInt?      @map("no_show_by")
+  createdAt            DateTime?    @map("created_at") @db.Timestamp(0)
+  updatedAt            DateTime?    @map("updated_at") @db.Timestamp(0)
+  user                 User         @relation("PendaftaranUser", fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+  dokter               User?        @relation("PendaftaranDokter", fields: [dokterId], references: [id], onDelete: SetNull, onUpdate: Restrict)
+  diterimaOlehDokter   User?        @relation("PendaftaranDiterimaDokter", fields: [diterimaOlehDokterId], references: [id], onDelete: SetNull, onUpdate: Restrict)
+  rekamMedis           RekamMedis[]
+
+  @@index([userId])
+  @@index([dokterId])
+  @@index([diterimaOlehDokterId])
+  @@map("pendaftarans")
+}
+
+model RekamMedis {
+  id            BigInt      @id @default(autoincrement())
+  pendaftaranId BigInt      @map("pendaftaran_id")
+  pasienId      BigInt?     @map("pasien_id")
+  dokterId      BigInt      @map("dokter_id")
+  tanggal       DateTime?   @db.Date
+  diagnosa      String      @db.VarChar(255)
+  tindakan      String      @db.VarChar(255)
+  resep         String?     @db.Text
+  catatan       String?     @db.Text
+  chainIndex    Int?        @map("chain_index")
+  prevHash      String?     @map("prev_hash") @db.VarChar(64)
+  blockHash     String?     @map("block_hash") @db.VarChar(64)
+  createdAt     DateTime?   @map("created_at") @db.Timestamp(0)
+  updatedAt     DateTime?   @map("updated_at") @db.Timestamp(0)
+  dokter        User        @relation("RekamMedisDokter", fields: [dokterId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+  pasien        User?       @relation("RekamMedisPasien", fields: [pasienId], references: [id], onDelete: SetNull, onUpdate: Restrict)
+  pendaftaran   Pendaftaran @relation(fields: [pendaftaranId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+
+  @@index([dokterId])
+  @@index([pendaftaranId])
+  @@index([pasienId])
+  @@index([pasienId, chainIndex])
+  @@map("rekam_medis")
+}
+
+model JadwalDokter {
+  id         BigInt    @id @default(autoincrement())
+  dokterId   BigInt    @map("dokter_id")
+  pasienId   BigInt?   @map("pasien_id")
+  hari       String    @db.VarChar(255)
+  jamMulai   DateTime  @map("jam_mulai") @db.Time(0)
+  jamSelesai DateTime  @map("jam_selesai") @db.Time(0)
+  createdAt  DateTime? @map("created_at") @db.Timestamp(0)
+  updatedAt  DateTime? @map("updated_at") @db.Timestamp(0)
+  dokter     User      @relation(fields: [dokterId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+
+  @@index([dokterId])
+  @@map("jadwal_dokters")
+}
+
+model Pembayaran {
+  id              BigInt    @id @default(autoincrement())
+  userId          BigInt    @map("user_id")
+  kodeTagihan     String    @unique(map: "pembayarans_kode_tagihan_unique") @map("kode_tagihan") @db.VarChar(255)
+  jumlah          Decimal   @db.Decimal(10, 2)
+  status          String    @db.VarChar(50)
+  buktiPembayaran String?   @map("bukti_pembayaran") @db.VarChar(255)
+  createdAt       DateTime? @map("created_at") @db.Timestamp(0)
+  updatedAt       DateTime? @map("updated_at") @db.Timestamp(0)
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+
+  @@index([userId])
+  @@map("pembayarans")
+}
+
+model Notifikasi {
+  id        BigInt    @id @default(autoincrement())
+  userId    BigInt    @map("user_id")
+  judul     String    @db.VarChar(255)
+  pesan     String    @db.Text
+  tipe      String?   @db.VarChar(255)
+  link      String?   @db.VarChar(255)
+  dibaca    Boolean   @default(false)
+  createdAt DateTime? @map("created_at") @db.Timestamp(0)
+  updatedAt DateTime? @map("updated_at") @db.Timestamp(0)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+
+  @@index([userId, dibaca, createdAt])
+  @@index([userId])
+  @@map("notifikasis")
+}
