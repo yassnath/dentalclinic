@@ -1,40 +1,142 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/pages/api-reference/create-next-app).
+# Klinik HealthEase
 
-## Getting Started
+A modern clinic information system built with **Next.js (Pages Router)**, **Prisma ORM**, and **Supabase Postgres**.
 
-First, run the development server:
+## Highlights
+
+- Role-based application flow: **Admin**, **Doctor**, **Receptionist**, and **Patient** dashboards.
+- Modern landing page with consistent healthcare palette, dark mode support, and chatbot entrypoint.
+- Global light/dark theme toggle across landing page, auth pages, and role dashboards.
+- Centralized validation popups (success, warning, error, info) and confirmation popups for sensitive actions (delete/logout/edit, etc).
+- Responsive tables with mobile-friendly behavior across landing and dashboard pages.
+- Patient registration with **KTP camera OCR autofill** (multi-pass OCR + fallback parsing/normalization).
+- Patient settings page with language switch (Indonesian/English) and account password update.
+- Prisma schema mapped to clinic modules: users, registrations, schedules, medical records, payments, and notifications.
+- Optional AI assistant integration (Cerebras API) with built-in fallback handling.
+
+## Tech Stack
+
+- **Frontend / SSR**: Next.js 16, React 19, TypeScript
+- **Database ORM**: Prisma 6
+- **Database**: Supabase Postgres
+- **Styling**: Tailwind CSS + custom global theme tokens
+- **Auth**: Cookie-based session/JWT utilities in app layer
+- **Containerization**: Docker + Docker Compose
+
+## Environment Variables
+
+Copy `.env.example` into `.env`, then fill values from your Supabase project and app secrets.
+
+```bash
+cp .env.example .env
+```
+
+Required variables:
+
+```env
+DATABASE_URL="postgresql://postgres.<project-ref>:<url-encoded-password>@aws-1-ap-northeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1&sslmode=require"
+DIRECT_URL="postgresql://postgres.<project-ref>:<url-encoded-password>@aws-1-ap-northeast-1.pooler.supabase.com:5432/postgres?sslmode=require"
+JWT_SECRET="replace-with-strong-secret"
+APP_URL="http://localhost:3000"
+```
+
+Optional variables:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL="https://<project-ref>.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY=""
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=""
+SUPABASE_URL="https://<project-ref>.supabase.co"
+SUPABASE_ANON_KEY=""
+SUPABASE_PUBLISHABLE_KEY=""
+SUPABASE_SERVICE_ROLE_KEY=""
+CEREBRAS_API_KEY=""
+CEREBRAS_MODEL="llama3.1-8b"
+CEREBRAS_BASE_URL="https://api.cerebras.ai/v1"
+RUN_DB_SEED="0"
+```
+
+Notes:
+
+- Use your Supabase **ORM/Prisma connection strings** for `DATABASE_URL` and `DIRECT_URL`.
+- If your DB password contains special characters (`@`, `!`, `%`, etc), URL-encode it in the connection string.
+- `DATABASE_URL` should point to pooled/runtime connection; `DIRECT_URL` should point to direct schema/migration connection.
+
+## Local Development
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Generate Prisma client:
+
+```bash
+npx prisma generate
+```
+
+Push schema:
+
+```bash
+npx prisma db push --skip-generate
+```
+
+Seed sample data (optional):
+
+```bash
+npm run db:seed
+```
+
+Run development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+App runs at `http://localhost:3000`.
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+## Development Scripts
 
-[API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+- `npm run dev` -> fast dev runner + automatic route warmup
+- `npm run dev:plain` -> standard `next dev`
+- `npm run dev:webpack` -> webpack fallback mode
+- `npm run warmup:routes` -> manual route warmup
+- `npm run build` -> production build
+- `npm run start` -> start production server
+- `npm run prisma:generate` -> Prisma client generation
+- `npm run prisma:push` -> push Prisma schema to database
+- `npm run prisma:studio` -> Prisma Studio
+- `npm run db:seed` -> seed default records
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) instead of React pages.
+## Docker
 
-This project uses [`next/font`](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Start with Docker Compose:
 
-## Learn More
+```bash
+docker compose up --build
+```
 
-To learn more about Next.js, take a look at the following resources:
+Container startup flow:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn-pages-router) - an interactive Next.js tutorial.
+1. `prisma generate`
+2. `prisma db push --skip-generate` (with retries)
+3. optional seed when `RUN_DB_SEED=1`
+4. run Next.js production server
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## OCR KTP Autofill Notes
 
-## Deploy on Vercel
+- The registration page supports camera capture and OCR extraction for KTP fields.
+- OCR parser includes multi-pass recognition and fallback heuristics for noisy text.
+- Best results: stable framing, good lighting, sharp focus, and minimal glare.
+- Some devices require HTTPS context for reliable camera preview.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Mobile Preview
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/pages/building-your-application/deploying) for more details.
+To test on phone:
+
+1. Run `npm run dev` on your laptop.
+2. Connect phone and laptop to the same network.
+3. Open `http://<your-local-ip>:3000` on phone browser.
+
+If camera preview is black on mobile, test with HTTPS tunneling (for example ngrok/cloudflared), then open the HTTPS URL on phone.
