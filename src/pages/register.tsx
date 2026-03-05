@@ -1,11 +1,7 @@
 import Head from "next/head";
 import Link from "next/link";
 import type { GetServerSideProps } from "next";
-import bcrypt from "bcryptjs";
 import { useEffect, useRef, useState } from "react";
-import { z } from "zod";
-import { prisma } from "@/lib/prisma";
-import { parseFormBody } from "@/lib/http";
 import { getSessionFromToken, getRoleHome } from "@/lib/auth";
 import PasswordInput from "@/components/PasswordInput";
 
@@ -29,28 +25,9 @@ type RegisterValues = {
 };
 
 type RegisterPageProps = {
-  error?: string;
+  error?: string | null;
   values: RegisterValues;
 };
-
-const registerSchema = z.object({
-  nik: z.string().regex(/^[0-9]{16}$/, "NIK harus 16 digit."),
-  name: z.string().min(2, "Nama minimal 2 karakter.").max(255),
-  tempat_lahir: z.string().min(2, "Tempat lahir wajib diisi.").max(120),
-  tanggal_lahir: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Format tanggal lahir tidak valid."),
-  jenis_kelamin: z.enum(["Laki-laki", "Perempuan"]),
-  alamat: z.string().min(4, "Alamat wajib diisi.").max(255),
-  rt_rw: z.string().min(3, "RT/RW wajib diisi.").max(15),
-  kelurahan_desa: z.string().min(2, "Kel/Desa wajib diisi.").max(120),
-  kecamatan: z.string().min(2, "Kecamatan wajib diisi.").max(120),
-  agama: z.string().min(2, "Agama wajib diisi.").max(32),
-  status_perkawinan: z.string().min(2, "Status perkawinan wajib diisi.").max(64),
-  pekerjaan: z.string().min(2, "Pekerjaan wajib diisi.").max(120),
-  kewarganegaraan: z.string().min(2, "Kewarganegaraan wajib diisi.").max(8),
-  berlaku_hingga: z.string().min(2, "Berlaku hingga wajib diisi.").max(32),
-  email: z.string().email("Email tidak valid."),
-  password: z.string().min(6, "Password minimal 6 karakter."),
-});
 
 function emptyValues(): RegisterValues {
   return {
@@ -71,10 +48,6 @@ function emptyValues(): RegisterValues {
     email: "",
     password: "",
   };
-}
-
-function sanitizeInput(input: unknown) {
-  return String(input ?? "").trim();
 }
 
 function normalizeGender(raw: string): "Laki-laki" | "Perempuan" | "" {
@@ -112,51 +85,6 @@ function normalizeDateInput(raw: string) {
   return "";
 }
 
-function usernameFromIdentity(name: string, nik: string) {
-  const nameChunk = name.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 14) || "pasien";
-  return `${nameChunk}${nik.slice(-6)}`.slice(0, 50);
-}
-
-async function ensureUniqueUsername(name: string, nik: string) {
-  const base = usernameFromIdentity(name, nik);
-  for (let i = 0; i < 200; i += 1) {
-    const candidate = i === 0 ? base : `${base}${i}`.slice(0, 50);
-    const exists = await prisma.user.findFirst({
-      where: { username: candidate },
-      select: { id: true },
-    });
-    if (!exists) return candidate;
-  }
-  throw new Error("Gagal membuat username unik.");
-}
-
-function composeAddress(values: RegisterValues) {
-  const joined = `${values.alamat}, RT/RW ${values.rt_rw}, Kel/Desa ${values.kelurahan_desa}, Kecamatan ${values.kecamatan}`;
-  return joined.slice(0, 255);
-}
-
-function normalizeForValidation(values: RegisterValues): RegisterValues {
-  return {
-    ...values,
-    nik: values.nik.replace(/\D/g, "").slice(0, 16),
-    name: values.name.trim(),
-    tempat_lahir: values.tempat_lahir.trim(),
-    tanggal_lahir: normalizeDateInput(values.tanggal_lahir),
-    jenis_kelamin: normalizeGender(values.jenis_kelamin),
-    alamat: values.alamat.trim(),
-    rt_rw: values.rt_rw.replace(/\s+/g, "").toUpperCase(),
-    kelurahan_desa: values.kelurahan_desa.trim(),
-    kecamatan: values.kecamatan.trim(),
-    agama: values.agama.trim(),
-    status_perkawinan: values.status_perkawinan.trim(),
-    pekerjaan: values.pekerjaan.trim(),
-    kewarganegaraan: values.kewarganegaraan.trim().toUpperCase(),
-    berlaku_hingga: values.berlaku_hingga.trim().toUpperCase(),
-    email: values.email.trim().toLowerCase(),
-    password: values.password,
-  };
-}
-
 export const getServerSideProps: GetServerSideProps<RegisterPageProps> = async (ctx) => {
   const session = await getSessionFromToken(ctx.req.cookies.healtease_session);
   if (session) {
@@ -167,78 +95,12 @@ export const getServerSideProps: GetServerSideProps<RegisterPageProps> = async (
       },
     };
   }
-
-  if (ctx.req.method === "POST") {
-    const body = await parseFormBody(ctx.req);
-    const submittedValues: RegisterValues = {
-      nik: sanitizeInput(body.nik),
-      name: sanitizeInput(body.name),
-      tempat_lahir: sanitizeInput(body.tempat_lahir),
-      tanggal_lahir: sanitizeInput(body.tanggal_lahir),
-      jenis_kelamin: normalizeGender(sanitizeInput(body.jenis_kelamin)),
-      alamat: sanitizeInput(body.alamat),
-      rt_rw: sanitizeInput(body.rt_rw),
-      kelurahan_desa: sanitizeInput(body.kelurahan_desa),
-      kecamatan: sanitizeInput(body.kecamatan),
-      agama: sanitizeInput(body.agama),
-      status_perkawinan: sanitizeInput(body.status_perkawinan),
-      pekerjaan: sanitizeInput(body.pekerjaan),
-      kewarganegaraan: sanitizeInput(body.kewarganegaraan),
-      berlaku_hingga: sanitizeInput(body.berlaku_hingga),
-      email: sanitizeInput(body.email),
-      password: String(body.password ?? ""),
-    };
-
-    const normalized = normalizeForValidation(submittedValues);
-    const parsed = registerSchema.safeParse(normalized);
-    if (!parsed.success) {
-      return {
-        props: {
-          error: parsed.error.issues[0]?.message ?? "Input tidak valid.",
-          values: { ...normalized, password: "" },
-        },
-      };
-    }
-
-    const exists = await prisma.user.findFirst({
-      where: {
-        OR: [{ email: parsed.data.email }, { nik: parsed.data.nik }],
-      },
-      select: { id: true },
-    });
-
-    if (exists) {
-      return {
-        props: { error: "Email atau NIK sudah terdaftar.", values: { ...parsed.data, password: "" } },
-      };
-    }
-
-    const hash = await bcrypt.hash(parsed.data.password, 10);
-    const username = await ensureUniqueUsername(parsed.data.name, parsed.data.nik);
-
-    await prisma.user.create({
-      data: {
-        name: parsed.data.name,
-        username,
-        email: parsed.data.email,
-        password: hash,
-        role: "pasien",
-        tanggalLahir: new Date(parsed.data.tanggal_lahir),
-        jenisKelamin: parsed.data.jenis_kelamin,
-        nik: parsed.data.nik,
-        alamat: composeAddress(parsed.data),
-      },
-    });
-
-    return {
-      redirect: {
-        destination: "/login?success=Registrasi%20berhasil.%20Silakan%20login.",
-        permanent: false,
-      },
-    };
-  }
-
-  return { props: { values: emptyValues() } };
+  return {
+    props: {
+      error: typeof ctx.query.error === "string" ? ctx.query.error : null,
+      values: emptyValues(),
+    },
+  };
 };
 
 type KtpFieldKey =
@@ -802,17 +664,48 @@ async function buildOcrSources(source: Blob): Promise<Array<{ name: string; blob
   if (!enhancedCtx) return [{ name: "original", blob: source }];
 
   const enhanced = new ImageData(new Uint8ClampedArray(baseData.data), scaledWidth, scaledHeight);
+  let luminanceSum = 0;
+  const pixels = enhanced.data.length / 4;
   for (let i = 0; i < enhanced.data.length; i += 4) {
     const r = enhanced.data[i];
     const g = enhanced.data[i + 1];
     const b = enhanced.data[i + 2];
-    let gray = 0.299 * r + 0.587 * g + 0.114 * b;
-    gray = clamp((gray - 128) * 1.35 + 128, 0, 255);
+    luminanceSum += 0.299 * r + 0.587 * g + 0.114 * b;
+  }
+  const avgLuminance = pixels > 0 ? luminanceSum / pixels : 140;
+  const lowLightMode = avgLuminance < 148;
+  const gamma = lowLightMode ? 0.72 : 0.86;
+  const gain = lowLightMode ? 1.54 : 1.35;
+  const offset = lowLightMode ? 22 : 10;
+
+  for (let i = 0; i < enhanced.data.length; i += 4) {
+    const r = enhanced.data[i];
+    const g = enhanced.data[i + 1];
+    const b = enhanced.data[i + 2];
+    const rawGray = 0.299 * r + 0.587 * g + 0.114 * b;
+    const gammaAdjusted = 255 * Math.pow(rawGray / 255, gamma);
+    let gray = clamp(gammaAdjusted + offset, 0, 255);
+    gray = clamp((gray - 128) * gain + 128, 0, 255);
     enhanced.data[i] = gray;
     enhanced.data[i + 1] = gray;
     enhanced.data[i + 2] = gray;
   }
   enhancedCtx.putImageData(enhanced, 0, 0);
+
+  const lowLightCanvas = document.createElement("canvas");
+  lowLightCanvas.width = scaledWidth;
+  lowLightCanvas.height = scaledHeight;
+  const lowLightCtx = lowLightCanvas.getContext("2d", { willReadFrequently: true });
+  if (lowLightCtx) {
+    const lowLight = new ImageData(new Uint8ClampedArray(enhanced.data), scaledWidth, scaledHeight);
+    for (let i = 0; i < lowLight.data.length; i += 4) {
+      const boosted = clamp((lowLight.data[i] - 108) * (lowLightMode ? 1.7 : 1.52) + 132, 0, 255);
+      lowLight.data[i] = boosted;
+      lowLight.data[i + 1] = boosted;
+      lowLight.data[i + 2] = boosted;
+    }
+    lowLightCtx.putImageData(lowLight, 0, 0);
+  }
 
   const binaryCanvas = document.createElement("canvas");
   binaryCanvas.width = scaledWidth;
@@ -827,9 +720,11 @@ async function buildOcrSources(source: Blob): Promise<Array<{ name: string; blob
 
   const binary = new ImageData(new Uint8ClampedArray(enhanced.data), scaledWidth, scaledHeight);
   const binarySoft = new ImageData(new Uint8ClampedArray(enhanced.data), scaledWidth, scaledHeight);
+  const hardThreshold = lowLightMode ? 138 : 148;
+  const softThreshold = lowLightMode ? 162 : 172;
   for (let i = 0; i < binary.data.length; i += 4) {
-    const hard = binary.data[i] > 148 ? 255 : 0;
-    const soft = binarySoft.data[i] > 172 ? 255 : 0;
+    const hard = binary.data[i] > hardThreshold ? 255 : 0;
+    const soft = binarySoft.data[i] > softThreshold ? 255 : 0;
     binary.data[i] = hard;
     binary.data[i + 1] = hard;
     binary.data[i + 2] = hard;
@@ -855,6 +750,7 @@ async function buildOcrSources(source: Blob): Promise<Array<{ name: string; blob
   }
 
   const enhancedBlob = await canvasToBlob(enhancedCanvas, "image/png");
+  const lowLightBlob = lowLightCtx ? await canvasToBlob(lowLightCanvas, "image/png") : enhancedBlob;
   const binaryBlob = await canvasToBlob(binaryCanvas, "image/png");
   const binarySoftBlob = binarySoftCtx ? await canvasToBlob(binarySoftCanvas, "image/png") : binaryBlob;
   const croppedBlob = croppedCtx ? await canvasToBlob(croppedCanvas, "image/png") : enhancedBlob;
@@ -862,16 +758,41 @@ async function buildOcrSources(source: Blob): Promise<Array<{ name: string; blob
   return [
     { name: "original", blob: source },
     { name: "enhanced", blob: enhancedBlob },
+    { name: "low-light", blob: lowLightBlob },
     { name: "binary-hard", blob: binaryBlob },
     { name: "binary-soft", blob: binarySoftBlob },
     { name: "cropped", blob: croppedBlob },
   ];
 }
 
+const OCR_EARLY_STOP_FIELDS: KtpFieldKey[] = [
+  "nik",
+  "name",
+  "tempat_lahir",
+  "tanggal_lahir",
+  "jenis_kelamin",
+  "alamat",
+  "rt_rw",
+  "kelurahan_desa",
+  "kecamatan",
+  "agama",
+  "status_perkawinan",
+  "pekerjaan",
+  "kewarganegaraan",
+  "berlaku_hingga",
+];
+
+function countFilledKtpFields(data: Partial<RegisterValues>) {
+  return OCR_EARLY_STOP_FIELDS.reduce((count, field) => {
+    const value = data[field];
+    return typeof value === "string" && value.trim().length > 0 ? count + 1 : count;
+  }, 0);
+}
+
 async function runKtpOcr(source: Blob, onProgress?: (percent: number) => void): Promise<OcrCandidate[]> {
   const tesseract = await import("tesseract.js");
   const worker = await tesseract.createWorker(["ind", "eng"]);
-  const passModes = [tesseract.PSM.SPARSE_TEXT, tesseract.PSM.SINGLE_BLOCK, tesseract.PSM.SINGLE_COLUMN, tesseract.PSM.AUTO];
+  const passModes = [tesseract.PSM.SPARSE_TEXT, tesseract.PSM.SINGLE_BLOCK, tesseract.PSM.AUTO];
 
   try {
     const sources = await buildOcrSources(source);
@@ -879,6 +800,8 @@ async function runKtpOcr(source: Blob, onProgress?: (percent: number) => void): 
     let doneSteps = 0;
     const seen = new Map<string, OcrCandidate>();
     const candidates: OcrCandidate[] = [];
+    let bestFilled = 0;
+    let bestConfidence = 0;
 
     const upsertCandidate = (candidate: OcrCandidate) => {
       const key = candidate.text.replace(/\s+/g, " ").trim();
@@ -889,6 +812,7 @@ async function runKtpOcr(source: Blob, onProgress?: (percent: number) => void): 
       }
     };
 
+    let shouldStopEarly = false;
     for (const item of sources) {
       for (const mode of passModes) {
         await worker.setParameters({
@@ -898,20 +822,47 @@ async function runKtpOcr(source: Blob, onProgress?: (percent: number) => void): 
           tessedit_char_blacklist: "[]{}<>`~",
           tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,:;/-()'",
           tessedit_do_invert: "0",
+          load_system_dawg: "0",
+          load_freq_dawg: "0",
         });
         const result = await worker.recognize(item.blob, { rotateAuto: true });
         const text = result.data.text?.trim();
+        const confidence = Number(result.data.confidence ?? 0);
         if (text) {
           upsertCandidate({
             text,
-            confidence: Number(result.data.confidence ?? 0),
+            confidence,
             source: item.name,
             mode: String(mode),
           });
+
+          const parsed = parseKtpText(text);
+          const filled = countFilledKtpFields(parsed);
+          if (filled > bestFilled || (filled === bestFilled && confidence > bestConfidence)) {
+            bestFilled = filled;
+            bestConfidence = confidence;
+          }
+          if (bestFilled >= OCR_EARLY_STOP_FIELDS.length && bestConfidence >= 66) {
+            shouldStopEarly = true;
+          } else if (
+            bestFilled >= OCR_EARLY_STOP_FIELDS.length - 1 &&
+            bestConfidence >= 80 &&
+            doneSteps >= Math.ceil(totalSteps * 0.35)
+          ) {
+            shouldStopEarly = true;
+          }
         }
         doneSteps += 1;
         const progress = 42 + Math.round((doneSteps / totalSteps) * 46);
         onProgress?.(Math.min(92, progress));
+
+        if (shouldStopEarly) {
+          onProgress?.(92);
+          break;
+        }
+      }
+      if (shouldStopEarly) {
+        break;
       }
     }
 
@@ -936,6 +887,7 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
   const [scanBusy, setScanBusy] = useState(false);
   const [cameraReady, setCameraReady] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
+  const [scanPreviewUrl, setScanPreviewUrl] = useState("");
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -957,10 +909,17 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
   };
 
   useEffect(() => {
+    return () => {
+      if (scanPreviewUrl) URL.revokeObjectURL(scanPreviewUrl);
+    };
+  }, [scanPreviewUrl]);
+
+  useEffect(() => {
     const startCamera = async () => {
       if (!scanOpen) return;
       setCameraReady(false);
       setScanProgress(0);
+      setScanPreviewUrl("");
       setScanMessage("Menyiapkan kamera...");
       setScanError("");
 
@@ -1137,6 +1096,8 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
           resolve(file);
         }, "image/jpeg", 0.95);
       });
+      const previewUrl = URL.createObjectURL(blob);
+      setScanPreviewUrl(previewUrl);
       setScanProgress(20);
       const ocrCandidates = await runKtpOcr(blob, (percent) => {
         setScanProgress((prev) => Math.max(prev, percent));
@@ -1215,6 +1176,7 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
       setScanProgress(0);
     } finally {
       setScanBusy(false);
+      setScanPreviewUrl("");
     }
   };
 
@@ -1226,6 +1188,7 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
     setCameraReady(false);
     setScanError("");
     setScanMessage("");
+    setScanPreviewUrl("");
   };
 
   return (
@@ -1277,7 +1240,7 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
             </aside>
 
             <form
-              action="/register"
+              action="/api/auth/register"
               method="POST"
               className="auth-form rounded-3xl border border-soft bg-surface p-5 sm:p-8"
               data-confirm="Pastikan semua data sudah benar?"
@@ -1434,8 +1397,11 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
 
             <div className="ktp-scan-video-shell">
               <video ref={videoRef} className="ktp-scan-video" autoPlay muted playsInline />
+              {scanBusy && scanPreviewUrl ? (
+                <img src={scanPreviewUrl} alt="Hasil tangkapan KTP" className="ktp-scan-freeze-frame" />
+              ) : null}
               {scanBusy ? (
-                  <div className="ktp-scan-progress-layer">
+                <div className="ktp-scan-progress-layer">
                   <div className="ktp-scan-progress-mask" style={{ width: `${scanProgress}%` }} />
                   <div className="ktp-scan-progress-track">
                     <div className="ktp-scan-progress-fill" style={{ width: `${scanProgress}%` }} />

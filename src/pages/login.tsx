@@ -1,14 +1,11 @@
 import Head from "next/head";
 import Link from "next/link";
 import type { GetServerSideProps } from "next";
-import bcrypt from "bcryptjs";
-import { prisma } from "@/lib/prisma";
-import { createSessionCookie, createSessionPayloadFromUser, getRoleHome, getSessionFromToken } from "@/lib/auth";
-import { parseFormBody } from "@/lib/http";
+import { getRoleHome, getSessionFromToken } from "@/lib/auth";
 import PasswordInput from "@/components/PasswordInput";
 
 type LoginPageProps = {
-  error?: string;
+  error?: string | null;
   success?: string | null;
   email?: string;
 };
@@ -24,50 +21,10 @@ export const getServerSideProps: GetServerSideProps<LoginPageProps> = async (ctx
     };
   }
 
-  if (ctx.req.method === "POST") {
-    const body = await parseFormBody(ctx.req);
-    const email = String(body.email ?? "").trim().toLowerCase();
-    const password = String(body.password ?? "");
-
-    try {
-      const user = await prisma.user.findUnique({
-        where: { email },
-      });
-
-      if (!user || !(await bcrypt.compare(password, user.password))) {
-        return {
-          props: {
-            error: "Login gagal. Email atau password salah.",
-            email,
-          },
-        };
-      }
-
-      await createSessionCookie(ctx.res, createSessionPayloadFromUser(user));
-
-      return {
-        redirect: {
-          destination: `${getRoleHome(user.role)}?success=${encodeURIComponent("Login berhasil. Selamat datang!")}`,
-          permanent: false,
-        },
-      };
-    } catch (error) {
-      const reason = error instanceof Error ? error.message : "Unknown error";
-      return {
-        props: {
-          error:
-            process.env.NODE_ENV === "development"
-              ? `Database error: ${reason}`
-              : "Database belum terhubung. Pastikan koneksi Supabase (DATABASE_URL/DIRECT_URL) sudah benar.",
-          email,
-        },
-      };
-    }
-  }
-
   return {
     props: {
-      success: typeof ctx.query.success === "string" ? ctx.query.success : "",
+      error: typeof ctx.query.error === "string" ? ctx.query.error : null,
+      success: typeof ctx.query.success === "string" ? ctx.query.success : null,
       email: typeof ctx.query.email === "string" ? ctx.query.email : "",
     },
   };
@@ -87,7 +44,7 @@ export default function LoginPage({ error, success, email }: LoginPageProps) {
         <div className="auth-orb auth-orb-a" />
         <div className="auth-orb auth-orb-b" />
 
-        <div className="mx-auto flex min-h-screen w-full max-w-5xl items-start px-4 py-6 sm:items-center sm:py-10">
+        <div className="mx-auto flex min-h-[100svh] w-full max-w-5xl items-center px-4 py-4 sm:py-10">
           <div className="auth-card grid w-full gap-3 p-2 sm:gap-4 sm:p-3 lg:grid-cols-2 lg:p-4">
             <aside className="auth-panel hidden p-8 lg:block">
               <span className="auth-badge">
@@ -125,7 +82,7 @@ export default function LoginPage({ error, success, email }: LoginPageProps) {
               </div>
             </aside>
 
-            <form action="/login" method="POST" autoComplete="off" className="auth-form rounded-3xl border border-soft bg-surface p-5 sm:p-8">
+            <form action="/api/auth/login" method="POST" autoComplete="off" className="auth-form rounded-3xl border border-soft bg-surface p-5 sm:p-8">
               <div className="mb-4 lg:hidden">
                 <span className="auth-badge">
                   <i className="fas fa-shield-heart" />
