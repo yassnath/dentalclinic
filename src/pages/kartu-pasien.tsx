@@ -1,4 +1,5 @@
 import type { GetServerSideProps } from "next";
+import { randomUUID } from "crypto";
 import DashboardLayout from "@/components/DashboardLayout";
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -25,15 +26,21 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (ctx) => 
     updates.noRm = `RM-${new Date().toISOString().slice(0, 7).replace("-", "")}-${auth.user.id.toString().padStart(5, "0")}`;
   }
   if (!auth.user.qrToken) {
-    updates.qrToken = crypto.randomUUID();
+    updates.qrToken = randomUUID();
   }
 
   let currentUser = auth.user;
   if (Object.keys(updates).length > 0) {
-    currentUser = await prisma.user.update({
-      where: { id: auth.user.id },
-      data: updates,
-    });
+    try {
+      currentUser = await prisma.user.update({
+        where: { id: auth.user.id },
+        data: updates,
+      });
+    } catch (error) {
+      // Jangan buat halaman gagal total jika sinkronisasi field tambahan user tidak tersedia.
+      console.error("[kartu-pasien] failed to update patient card fields:", error instanceof Error ? error.message : String(error));
+      currentUser = auth.user;
+    }
   }
 
   const unreadNotifCount = await safeUnreadNotifCount(currentUser.id);

@@ -23,17 +23,16 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   if ("redirect" in auth) return auth;
 
   const language = getLanguageFromRequest(ctx);
-  const dbUser = await prisma.user.findUnique({
-    where: { id: auth.user.id },
-  });
-  if (!dbUser) {
-    return {
-      redirect: {
-        destination: "/login",
-        permanent: false,
-      },
-    };
+  let dbUser = null;
+  try {
+    dbUser = await prisma.user.findUnique({
+      where: { id: auth.user.id },
+    });
+  } catch (error) {
+    console.error("[pasien/pengaturan] failed to fetch user:", error instanceof Error ? error.message : String(error));
   }
+
+  const effectiveUser = dbUser ?? auth.user;
 
   if (ctx.req.method === "POST") {
     const body = await parseFormBody(ctx.req);
@@ -51,6 +50,15 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
     }
 
     if (action === "account") {
+      if (!dbUser) {
+        return {
+          redirect: {
+            destination: "/pasien/pengaturan?error=Data%20akun%20tidak%20siap.%20Silakan%20refresh%20halaman.",
+            permanent: false,
+          },
+        };
+      }
+
       const currentPassword = String(body.current_password ?? "");
       const newPassword = String(body.new_password ?? "");
       const confirmPassword = String(body.confirm_password ?? "");
@@ -108,11 +116,11 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
     }
   }
 
-  const unreadNotifCount = await safeUnreadNotifCount(dbUser.id);
+  const unreadNotifCount = await safeUnreadNotifCount(effectiveUser.id);
 
   return {
     props: {
-      user: toSessionUser(dbUser),
+      user: toSessionUser(effectiveUser),
       unreadNotifCount,
       language,
       success: typeof ctx.query.success === "string" ? ctx.query.success : "",

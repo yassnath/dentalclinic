@@ -16,7 +16,7 @@ export function getLanguageFromCookieHeader(cookieHeader: string | undefined): A
 }
 
 export function getLanguageFromRequest(ctx: GetServerSidePropsContext): AppLanguage {
-  return normalizeLanguage(ctx.req.cookies[LANGUAGE_COOKIE]);
+  return normalizeLanguage(ctx.req.cookies?.[LANGUAGE_COOKIE]);
 }
 
 export function createLanguageCookie(language: AppLanguage) {
@@ -43,4 +43,3 @@ export function appendSetCookie(res: ResponseLike, cookieValue: string) {
   }
   res.setHeader("Set-Cookie", [String(current), cookieValue]);
 }
-
