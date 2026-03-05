@@ -872,6 +872,127 @@ table:is(.responsive-table, .theme-table) td {
     radial-gradient(circle at 110% 115%, color-mix(in srgb, var(--secondary-main) 16%, transparent) 0%, transparent 46%),
     var(--bg-surface);
   overscroll-behavior: none;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+}
+
+.dashboard-sidebar-density-1 {
+  padding: 1rem 0.9rem;
+}
+
+.dashboard-sidebar-density-1 nav {
+  margin-top: 0.95rem !important;
+}
+
+.dashboard-sidebar-density-1 nav > * + * {
+  margin-top: 0.4rem !important;
+}
+
+.dashboard-sidebar-density-1 .dashboard-nav-link {
+  padding: 9px 10px;
+}
+
+.dashboard-sidebar-density-1 .dashboard-nav-icon {
+  width: 28px;
+  height: 28px;
+}
+
+.dashboard-sidebar-density-1 .dashboard-nav-label {
+  font-size: 0.88rem;
+}
+
+.dashboard-sidebar-density-2 {
+  padding: 0.85rem 0.8rem;
+}
+
+.dashboard-sidebar-density-2 .dashboard-brand {
+  padding: 11px;
+}
+
+.dashboard-sidebar-density-2 .dashboard-brand .mb-3 {
+  margin-bottom: 0.55rem;
+}
+
+.dashboard-sidebar-density-2 .dashboard-brand .text-lg {
+  font-size: 1.03rem;
+}
+
+.dashboard-sidebar-density-2 .dashboard-brand .text-xs {
+  font-size: 0.69rem;
+}
+
+.dashboard-sidebar-density-2 nav {
+  margin-top: 0.72rem !important;
+}
+
+.dashboard-sidebar-density-2 nav > * + * {
+  margin-top: 0.28rem !important;
+}
+
+.dashboard-sidebar-density-2 .dashboard-nav-link {
+  padding: 7px 9px;
+  border-radius: 11px;
+}
+
+.dashboard-sidebar-density-2 .dashboard-nav-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+}
+
+.dashboard-sidebar-density-2 .dashboard-nav-label {
+  font-size: 0.82rem;
+}
+
+.dashboard-sidebar-density-3 {
+  padding: 0.7rem;
+}
+
+.dashboard-sidebar-density-3 .dashboard-brand {
+  padding: 9px;
+  border-radius: 15px;
+}
+
+.dashboard-sidebar-density-3 .dashboard-brand .mb-3 {
+  margin-bottom: 0.45rem;
+}
+
+.dashboard-sidebar-density-3 .dashboard-brand .text-lg {
+  font-size: 0.95rem;
+  line-height: 1.08;
+}
+
+.dashboard-sidebar-density-3 .dashboard-brand .text-xs {
+  font-size: 0.64rem;
+  letter-spacing: 0.04em;
+}
+
+.dashboard-sidebar-density-3 .dashboard-brand .rounded-2xl {
+  padding: 0.32rem 0.35rem;
+}
+
+.dashboard-sidebar-density-3 nav {
+  margin-top: 0.56rem !important;
+}
+
+.dashboard-sidebar-density-3 nav > * + * {
+  margin-top: 0.2rem !important;
+}
+
+.dashboard-sidebar-density-3 .dashboard-nav-link {
+  padding: 6px 7px;
+  border-radius: 9px;
+}
+
+.dashboard-sidebar-density-3 .dashboard-nav-icon {
+  width: 21px;
+  height: 21px;
+  border-radius: 7px;
+}
+
+.dashboard-sidebar-density-3 .dashboard-nav-label {
+  font-size: 0.76rem;
 }
 
 .dashboard-brand {

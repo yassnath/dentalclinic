@@ -142,12 +142,6 @@ export default function DashboardLayout({
 
     let cancelled = false;
     const measureFit = async () => {
-      const isMobile = window.matchMedia("(max-width: 639px)").matches;
-      if (!isMobile) {
-        setSidebarDensity(0);
-        return;
-      }
-
       const levels = [0, 1, 2, 3];
       for (const level of levels) {
         if (cancelled) return;
@@ -186,7 +180,7 @@ export default function DashboardLayout({
       <div className="min-h-screen sm:flex">
         <aside
           ref={sidebarRef}
-          className={`dashboard-sidebar dashboard-sidebar-density-${sidebarDensity} fixed inset-y-0 left-0 z-50 h-[100dvh] w-72 overflow-hidden transform border-r border-soft bg-surface p-6 shadow-lg transition-transform duration-300 ease-out sm:static sm:h-auto sm:translate-x-0 sm:overflow-visible ${
+          className={`dashboard-sidebar dashboard-sidebar-density-${sidebarDensity} fixed inset-y-0 left-0 z-50 h-[100dvh] w-72 overflow-hidden transform border-r border-soft bg-surface p-6 shadow-lg transition-transform duration-300 ease-out sm:sticky sm:top-0 sm:self-start sm:h-[100dvh] sm:translate-x-0 ${
             open ? "translate-x-0" : "-translate-x-full"
           }`}
         >
