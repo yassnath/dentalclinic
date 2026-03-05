@@ -905,6 +905,8 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
   const [scanError, setScanError] = useState("");
   const [scanBusy, setScanBusy] = useState(false);
   const [cameraReady, setCameraReady] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<Blob | null>(null);
+  const [selectedImageUrl, setSelectedImageUrl] = useState("");
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -914,23 +916,40 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
     setFormValues(values);
   }, [values]);
 
+  const replaceSelectedImage = (image: Blob | null) => {
+    setSelectedImage((prev) => {
+      if (prev === image) return prev;
+      return image;
+    });
+    setSelectedImageUrl((prevUrl) => {
+      if (prevUrl) URL.revokeObjectURL(prevUrl);
+      return image ? URL.createObjectURL(image) : "";
+    });
+  };
+
+  const stopCameraStream = () => {
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.srcObject = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (selectedImageUrl) URL.revokeObjectURL(selectedImageUrl);
+    };
+  }, [selectedImageUrl]);
+
   useEffect(() => {
     const startCamera = async () => {
-      if (!scanOpen) return;
+      if (!scanOpen || selectedImage) return;
       setCameraReady(false);
       setScanMessage("Menyiapkan kamera...");
       setScanError("");
-
-      const stopStream = () => {
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach((track) => track.stop());
-          streamRef.current = null;
-        }
-        if (videoRef.current) {
-          videoRef.current.pause();
-          videoRef.current.srcObject = null;
-        }
-      };
 
       const bindStream = async (stream: MediaStream) => {
         if (!videoRef.current) return false;
@@ -998,7 +1017,7 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
 
         for (const videoConstraints of options) {
           try {
-            stopStream();
+            stopCameraStream();
             const stream = await mediaDevices.getUserMedia({ video: videoConstraints, audio: false });
             streamRef.current = stream;
             const attached = await bindStream(stream);
@@ -1008,7 +1027,7 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
             }
           } catch (error) {
             lastError = error;
-            stopStream();
+            stopCameraStream();
           }
         }
 
@@ -1038,12 +1057,9 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
         cleanupVideo.pause();
         cleanupVideo.srcObject = null;
       }
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
-        streamRef.current = null;
-      }
+      stopCameraStream();
     };
-  }, [scanOpen]);
+  }, [scanOpen, selectedImage]);
 
   const onFieldChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = event.target;
@@ -1073,7 +1089,7 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
     }));
   };
 
-  const captureAndScan = async () => {
+  const capturePhoto = async () => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
     if (!video || !canvas) {
@@ -1087,7 +1103,7 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
 
     setScanBusy(true);
     setScanError("");
-    setScanMessage("Mengambil gambar KTP...");
+    setScanMessage("Mengambil foto KTP...");
 
     try {
       const width = video.videoWidth || 1280;
@@ -1108,8 +1124,31 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
         }, "image/jpeg", 0.95);
       });
 
-      setScanMessage("Menganalisa teks KTP (OCR multi-pass & voting)...");
-      const ocrCandidates = await runKtpOcr(blob);
+      replaceSelectedImage(blob);
+      stopCameraStream();
+      setCameraReady(false);
+      setScanMessage("Foto KTP berhasil diambil. Lanjutkan dengan klik Proses OCR.");
+      setScanError("");
+    } catch {
+      setScanError("Gagal mengambil foto KTP. Coba ulangi.");
+      setScanMessage("");
+    } finally {
+      setScanBusy(false);
+    }
+  };
+
+  const processSelectedImage = async () => {
+    if (!selectedImage) {
+      setScanError("Belum ada foto KTP. Ambil foto atau pilih file terlebih dahulu.");
+      return;
+    }
+
+    setScanBusy(true);
+    setScanError("");
+    setScanMessage("Menganalisa teks KTP (OCR multi-pass & voting)...");
+
+    try {
+      const ocrCandidates = await runKtpOcr(selectedImage);
       if (!ocrCandidates.length) {
         throw new Error("Tidak ada teks terbaca dari OCR.");
       }
@@ -1184,7 +1223,32 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
     }
   };
 
+  const onPickImageFile = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setScanError("File harus berupa gambar.");
+      return;
+    }
+
+    replaceSelectedImage(file);
+    stopCameraStream();
+    setCameraReady(false);
+    setScanError("");
+    setScanMessage("Foto KTP dipilih. Lanjutkan dengan klik Proses OCR.");
+  };
+
+  const retakePhoto = () => {
+    replaceSelectedImage(null);
+    setScanError("");
+    setScanMessage("Menyiapkan kamera...");
+    setCameraReady(false);
+  };
+
   const closeScan = () => {
+    stopCameraStream();
+    replaceSelectedImage(null);
     setScanOpen(false);
     setScanBusy(false);
     setCameraReady(false);
@@ -1381,7 +1445,7 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
               <div>
                 <h3 className="text-lg font-bold text-secondary">Scan KTP</h3>
                 <p className="text-xs" style={{ color: "var(--text-70)" }}>
-                  Posisikan KTP di dalam frame kamera, lalu jalankan OCR.
+                  Ambil/pilih foto KTP terlebih dahulu, lalu proses OCR dari foto.
                 </p>
               </div>
               <button type="button" onClick={closeScan} className="ktp-scan-close" aria-label="Tutup">
@@ -1390,7 +1454,11 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
             </div>
 
             <div className="ktp-scan-video-shell">
-              <video ref={videoRef} className="ktp-scan-video" autoPlay muted playsInline />
+              {selectedImageUrl ? (
+                <img src={selectedImageUrl} alt="Preview foto KTP" className="ktp-scan-video" />
+              ) : (
+                <video ref={videoRef} className="ktp-scan-video" autoPlay muted playsInline />
+              )}
             </div>
             <canvas ref={canvasRef} className="hidden" />
 
@@ -1401,18 +1469,42 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
               <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{scanError}</div>
             ) : null}
 
-            <div className="mt-4 flex flex-wrap justify-end gap-2">
-              <button type="button" onClick={closeScan} className="rounded-xl border border-soft px-4 py-2 text-sm font-semibold text-secondary">
-                Batal
-              </button>
-              <button
-                type="button"
-                onClick={captureAndScan}
-                disabled={scanBusy || !cameraReady}
-                className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-65"
-              >
-                {scanBusy ? "Memproses..." : "Ambil & Scan"}
-              </button>
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+              <label className="inline-flex cursor-pointer items-center rounded-xl border border-soft px-4 py-2 text-sm font-semibold text-secondary hover:bg-white/60">
+                <i className="fas fa-image mr-2" />
+                Pilih Foto
+                <input type="file" accept="image/*" capture="environment" className="hidden" onChange={onPickImageFile} />
+              </label>
+
+              <div className="flex flex-wrap justify-end gap-2">
+                {selectedImage ? (
+                  <button type="button" onClick={retakePhoto} className="rounded-xl border border-soft px-4 py-2 text-sm font-semibold text-secondary">
+                    Ambil Ulang
+                  </button>
+                ) : null}
+                <button type="button" onClick={closeScan} className="rounded-xl border border-soft px-4 py-2 text-sm font-semibold text-secondary">
+                  Batal
+                </button>
+                {selectedImage ? (
+                  <button
+                    type="button"
+                    onClick={processSelectedImage}
+                    disabled={scanBusy}
+                    className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-65"
+                  >
+                    {scanBusy ? "Memproses..." : "Proses OCR"}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={capturePhoto}
+                    disabled={scanBusy || !cameraReady}
+                    className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-65"
+                  >
+                    {scanBusy ? "Memproses..." : "Ambil Foto"}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
