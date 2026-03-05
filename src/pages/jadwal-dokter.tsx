@@ -3,6 +3,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import RegistrationForm from "@/components/RegistrationForm";
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { safeUnreadNotifCount } from "@/lib/notifications";
 import { toSessionUser, type SessionUser } from "@/lib/user-props";
 import { countForDoctorOnDate } from "@/lib/queue";
 import { toHariIndonesia, toDateInputValue } from "@/lib/date";
@@ -38,9 +39,7 @@ export const getServerSideProps: GetServerSideProps<JadwalDokterPageProps> = asy
   const auth = await requireAuth(ctx, { roles: ["pasien"] });
   if ("redirect" in auth) return auth;
 
-  const unreadNotifCount = await prisma.notifikasi.count({
-    where: { userId: auth.user.id, dibaca: false },
-  });
+  const unreadNotifCount = await safeUnreadNotifCount(auth.user.id);
 
   const selectedTanggal = typeof ctx.query.tanggal_kunjungan === "string" ? ctx.query.tanggal_kunjungan : "";
   const selectedSpesialis = typeof ctx.query.spesialis === "string" ? ctx.query.spesialis : "";

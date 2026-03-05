@@ -3,6 +3,7 @@ import { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { safeUnreadNotifCount } from "@/lib/notifications";
 import { toSessionUser, type SessionUser } from "@/lib/user-props";
 import { formatCurrency } from "@/lib/format";
 import { makeSsrCacheKey, shouldBypassSsrCache, withSsrCache } from "@/lib/ssr-cache";
@@ -28,9 +29,7 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (ctx) => 
 
   const loadData = async () => {
     const [unreadNotifCount, pembayarans] = await Promise.all([
-      prisma.notifikasi.count({
-        where: { userId: auth.user.id, dibaca: false },
-      }),
+      safeUnreadNotifCount(auth.user.id),
       prisma.pembayaran.findMany({
         where: { userId: auth.user.id },
         select: {

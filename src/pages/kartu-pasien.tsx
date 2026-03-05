@@ -5,6 +5,7 @@ import QRCode from "qrcode";
 import DashboardLayout from "@/components/DashboardLayout";
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { safeUnreadNotifCount } from "@/lib/notifications";
 import { toSessionUser, type SessionUser } from "@/lib/user-props";
 
 type PageProps = {
@@ -53,9 +54,7 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (ctx) => 
     });
   }
 
-  const unreadNotifCount = await prisma.notifikasi.count({
-    where: { userId: currentUser.id, dibaca: false },
-  });
+  const unreadNotifCount = await safeUnreadNotifCount(currentUser.id);
 
   const user = toSessionUser(currentUser);
   const qrUrl = await ensureQr(user);

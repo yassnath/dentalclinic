@@ -2,6 +2,7 @@ import type { GetServerSideProps } from "next";
 import DashboardLayout from "@/components/DashboardLayout";
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { safeUnreadNotifCount } from "@/lib/notifications";
 import { toSessionUser, type SessionUser } from "@/lib/user-props";
 import { formatDate } from "@/lib/format";
 import { toPlainObject } from "@/lib/serialize";
@@ -29,9 +30,7 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (ctx) => 
   if ("redirect" in auth) return auth;
 
   const [unreadNotifCount, pendaftarans] = await Promise.all([
-    prisma.notifikasi.count({
-      where: { userId: auth.user.id, dibaca: false },
-    }),
+    safeUnreadNotifCount(auth.user.id),
     prisma.pendaftaran.findMany({
       where: { userId: auth.user.id },
       include: { dokter: true },

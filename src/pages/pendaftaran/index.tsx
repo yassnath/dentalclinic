@@ -4,6 +4,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import RegistrationForm from "@/components/RegistrationForm";
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { safeUnreadNotifCount } from "@/lib/notifications";
 import { countForDoctorOnDate, generateQueueForDoctorAndDate } from "@/lib/queue";
 import { toDateInputValue, toHariIndonesia } from "@/lib/date";
 import { toSessionUser, type SessionUser } from "@/lib/user-props";
@@ -83,9 +84,7 @@ async function buildFormData(userId: bigint, selectedTanggal: string, selectedSp
     dokters = available;
   }
 
-  const unreadNotifCount = await prisma.notifikasi.count({
-    where: { userId, dibaca: false },
-  });
+  const unreadNotifCount = await safeUnreadNotifCount(userId);
 
   return { spesialisList, dokters, unreadNotifCount };
 }

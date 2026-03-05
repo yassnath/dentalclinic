@@ -366,16 +366,23 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="relative mx-auto w-full max-w-xl md:max-w-lg lg:max-w-[34rem]" data-reveal>
-              <div className="landing-panel relative overflow-hidden rounded-[2rem] border border-soft bg-white p-3 shadow-2xl shadow-blue-500/20 sm:p-4">
-                <div className="mb-3 flex items-center justify-between rounded-xl border border-soft bg-blue-50 px-3 py-2.5">
+            <div className="relative mx-auto w-full max-w-xl md:max-w-[30rem] lg:max-w-[31rem]" data-reveal>
+              <div className="landing-panel relative overflow-hidden rounded-[2rem] border border-soft bg-white p-2.5 shadow-2xl shadow-blue-500/20 sm:p-3 md:p-3.5">
+                <div className="mb-2.5 flex items-center justify-between rounded-xl border border-soft bg-blue-50 px-3 py-2 md:px-3.5">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">Dashboard Ringkas</p>
                     <p className="text-sm font-semibold text-secondary">Pantau alur pasien hari ini</p>
                   </div>
                   <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-bold text-green-700">Live</span>
                 </div>
-                <Image src="/images/login.png" alt="Ilustrasi Klinik" width={640} height={640} className="mx-auto w-full max-w-[24rem] sm:max-w-[26rem]" priority />
+                <Image
+                  src="/images/login.png"
+                  alt="Ilustrasi Klinik"
+                  width={640}
+                  height={640}
+                  className="mx-auto w-full max-w-[19rem] sm:max-w-[21rem] md:max-w-[22rem] lg:max-w-[23rem]"
+                  priority
+                />
               </div>
 
               <div className="landing-float-card absolute -left-5 top-6 hidden w-44 rounded-2xl border border-soft bg-white p-4 shadow-lg md:block" data-reveal>

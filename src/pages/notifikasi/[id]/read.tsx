@@ -1,6 +1,6 @@
 import type { GetServerSideProps } from "next";
 import { requireAuth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { safeMarkNotificationRead } from "@/lib/notifications";
 
 export const getServerSideProps: GetServerSideProps = async (ctx) => {
   const auth = await requireAuth(ctx, { roles: ["pasien"] });
@@ -10,16 +10,7 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
   const id = BigInt(Array.isArray(idParam) ? idParam[0] : idParam ?? "0");
 
   if (ctx.req.method === "POST") {
-    const notif = await prisma.notifikasi.findFirst({
-      where: { id, userId: auth.user.id },
-      select: { id: true },
-    });
-    if (notif) {
-      await prisma.notifikasi.update({
-        where: { id: notif.id },
-        data: { dibaca: true },
-      });
-    }
+    await safeMarkNotificationRead(auth.user.id, id);
   }
 
   return {

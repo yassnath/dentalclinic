@@ -1,7 +1,7 @@
 import type { GetServerSideProps } from "next";
 import DashboardLayout from "@/components/DashboardLayout";
 import { requireAuth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { safeListNotifications, safeUnreadNotifCount } from "@/lib/notifications";
 import { toSessionUser, type SessionUser } from "@/lib/user-props";
 import { formatDateTime } from "@/lib/format";
 
@@ -25,28 +25,20 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (ctx) => 
   const auth = await requireAuth(ctx, { roles: ["pasien"] });
   if ("redirect" in auth) return auth;
 
-  const [notifikasis, unreadNotifCount] = await Promise.all([
-    prisma.notifikasi.findMany({
-      where: { userId: auth.user.id },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.notifikasi.count({
-      where: { userId: auth.user.id, dibaca: false },
-    }),
-  ]);
+  const [notifikasis, unreadNotifCount] = await Promise.all([safeListNotifications(auth.user.id), safeUnreadNotifCount(auth.user.id)]);
 
   return {
     props: {
       user: toSessionUser(auth.user),
       unreadNotifCount,
       notifikasis: notifikasis.map((notif) => ({
-        id: notif.id.toString(),
+        id: notif.id,
         judul: notif.judul,
         pesan: notif.pesan,
         tipe: notif.tipe,
         link: notif.link,
         dibaca: notif.dibaca,
-        created_at: notif.createdAt ? notif.createdAt.toISOString() : null,
+        created_at: notif.createdAt,
       })),
     },
   };

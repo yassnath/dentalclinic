@@ -7,6 +7,7 @@ import { requireAuth } from "@/lib/auth";
 import { parseFormBody } from "@/lib/http";
 import { createLanguageCookie, getLanguageFromRequest, normalizeLanguage, appendSetCookie, type AppLanguage } from "@/lib/language";
 import { prisma } from "@/lib/prisma";
+import { safeUnreadNotifCount } from "@/lib/notifications";
 import { toSessionUser, type SessionUser } from "@/lib/user-props";
 
 type Props = {
@@ -107,9 +108,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
     }
   }
 
-  const unreadNotifCount = await prisma.notifikasi.count({
-    where: { userId: dbUser.id, dibaca: false },
-  });
+  const unreadNotifCount = await safeUnreadNotifCount(dbUser.id);
 
   return {
     props: {
