@@ -56,7 +56,19 @@ export const getServerSideProps: GetServerSideProps<PasienDashboardProps> = asyn
   };
 
   const cacheKey = makeSsrCacheKey(`pasien-dashboard:${auth.user.id.toString()}`, ctx.query);
-  const data = shouldBypassSsrCache(ctx.query) ? await loadData() : await withSsrCache(cacheKey, 5000, loadData);
+  let data: Awaited<ReturnType<typeof loadData>>;
+  try {
+    data = shouldBypassSsrCache(ctx.query) ? await loadData() : await withSsrCache(cacheKey, 5000, loadData);
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : "Unknown error";
+    console.error("[pasien/dashboard] failed to load stats:", reason);
+    data = {
+      unreadNotifCount: 0,
+      totalPendaftaran: 0,
+      totalRekamMedis: 0,
+      tagihanAktif: 0,
+    };
+  }
 
   return {
     props: {
