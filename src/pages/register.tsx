@@ -2,7 +2,6 @@ import Head from "next/head";
 import Link from "next/link";
 import type { GetServerSideProps } from "next";
 import { useEffect, useRef, useState } from "react";
-import { getSessionFromToken, getRoleHome } from "@/lib/auth";
 import PasswordInput from "@/components/PasswordInput";
 
 type RegisterValues = {
@@ -86,15 +85,6 @@ function normalizeDateInput(raw: string) {
 }
 
 export const getServerSideProps: GetServerSideProps<RegisterPageProps> = async (ctx) => {
-  const session = await getSessionFromToken(ctx.req.cookies.healtease_session);
-  if (session) {
-    return {
-      redirect: {
-        destination: getRoleHome(session.role),
-        permanent: false,
-      },
-    };
-  }
   return {
     props: {
       error: typeof ctx.query.error === "string" ? ctx.query.error : null,
