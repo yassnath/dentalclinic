@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { Prisma } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
 import { withQuery } from "@/lib/http";
 
@@ -173,16 +174,63 @@ function redirectTo(res: NextApiResponse, path: string, params?: Record<string, 
   res.status(303).setHeader("Location", location).end();
 }
 
-function resolveRegisterErrorMessage(reason: string) {
+function toErrorReason(error: unknown) {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+  return "Unknown error";
+}
+
+function isSchemaMismatchReason(reason: string) {
   const text = reason.toLowerCase();
-  if (
+  return (
+    text.includes("unknown argument") ||
+    text.includes("unknown field") ||
+    text.includes("does not exist in the current database") ||
+    (text.includes("column") && text.includes("does not exist")) ||
+    (text.includes("relation") && text.includes("does not exist")) ||
+    (text.includes("table") && text.includes("does not exist"))
+  );
+}
+
+function isConnectivityReason(reason: string) {
+  const text = reason.toLowerCase();
+  return (
     text.includes("can't reach database server") ||
     text.includes("tenant or user not found") ||
     text.includes("authentication failed") ||
     text.includes("p1000") ||
     text.includes("p1001") ||
     text.includes("p1017")
-  ) {
+  );
+}
+
+function isTimeoutReason(reason: string) {
+  const text = reason.toLowerCase();
+  return text.includes("timed out") || text.includes("timeout");
+}
+
+function isIdentityTableMissingReason(reason: string) {
+  const text = reason.toLowerCase();
+  return text.includes("patient_identities") || text.includes("relation") || text.includes("table");
+}
+
+function resolveRegisterErrorMessage(error: unknown) {
+  const reason = toErrorReason(error);
+  const text = reason.toLowerCase();
+
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    if (error.code === "P2002") {
+      return "Data sudah terdaftar. Cek kembali email atau NIK.";
+    }
+    if (error.code === "P2021") {
+      return "Tabel database deployment belum sinkron. Sinkronkan schema lalu coba lagi.";
+    }
+    if (error.code === "P2022") {
+      return "Kolom database deployment belum sinkron. Sinkronkan schema lalu coba lagi.";
+    }
+  }
+
+  if (error instanceof Prisma.PrismaClientInitializationError || isConnectivityReason(reason)) {
     return "Database belum terhubung. Cek environment deployment: DATABASE_URL, DIRECT_URL, dan password Supabase.";
   }
 
@@ -190,11 +238,11 @@ function resolveRegisterErrorMessage(reason: string) {
     return "Koneksi database deployment belum stabil. Coba ulang dalam beberapa detik.";
   }
 
-  if (text.includes("timed out") || text.includes("timeout")) {
+  if (isTimeoutReason(reason)) {
     return "Koneksi database timeout. Coba ulang beberapa saat lagi.";
   }
 
-  if (text.includes("invalid") || text.includes("argument")) {
+  if (error instanceof Prisma.PrismaClientValidationError || isSchemaMismatchReason(reason)) {
     return "Data register tidak cocok dengan struktur deployment. Sinkronkan build terbaru lalu coba lagi.";
   }
 
@@ -202,7 +250,7 @@ function resolveRegisterErrorMessage(reason: string) {
     return "Data sudah terdaftar. Cek kembali email atau NIK.";
   }
 
-  if (text.includes("patient_identities") || text.includes("relation") || text.includes("table")) {
+  if (isIdentityTableMissingReason(reason)) {
     return "Registrasi akun berhasil, tetapi penyimpanan detail KTP belum aktif di deployment. Jalankan sinkronisasi database.";
   }
 
@@ -255,12 +303,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const exists = await prisma.user.findFirst({
-      where: {
-        OR: [{ email: parsed.data.email }, { nik: parsed.data.nik }],
-      },
-      select: { id: true },
-    });
+    let exists: { id: bigint } | null = null;
+    try {
+      exists = await prisma.user.findFirst({
+        where: {
+          OR: [{ email: parsed.data.email }, { nik: parsed.data.nik }],
+        },
+        select: { id: true },
+      });
+    } catch (existsError) {
+      const reason = toErrorReason(existsError);
+      console.error("[register] find existing (email+nik) failed:", reason);
+      if (!isSchemaMismatchReason(reason)) {
+        throw existsError;
+      }
+      exists = await prisma.user.findFirst({
+        where: { email: parsed.data.email },
+        select: { id: true },
+      });
+    }
 
     if (exists) {
       redirectTo(res, "/register", { error: "Email atau NIK sudah terdaftar." });
@@ -319,9 +380,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         break;
       } catch (createUserError) {
         lastCreateError = createUserError;
-        const reason = createUserError instanceof Error ? createUserError.message : "create user failed";
+        const reason = toErrorReason(createUserError);
         console.error(`[register] create user failed (${variant.name}):`, reason);
-        if (!/(unknown argument|column|field|schema|invalid)/i.test(reason)) {
+        if (!isSchemaMismatchReason(reason)) {
           throw createUserError;
         }
       }
@@ -386,10 +447,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       email: parsed.data.email,
     });
   } catch (error) {
-    const reason = error instanceof Error ? error.message : "Unknown error";
+    const reason = toErrorReason(error);
     console.error("[register] failed:", reason);
     redirectTo(res, "/register", {
-      error: process.env.NODE_ENV === "development" ? `Database error: ${reason}` : resolveRegisterErrorMessage(reason),
+      error: process.env.NODE_ENV === "development" ? `Database error: ${reason}` : resolveRegisterErrorMessage(error),
     });
   }
 }
