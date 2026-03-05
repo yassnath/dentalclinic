@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ThemeToggle from "@/components/ThemeToggle";
 
 type LayoutUser = {
@@ -94,8 +94,6 @@ export default function DashboardLayout({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [language, setLanguage] = useState<"id" | "en">("id");
-  const [sidebarDensity, setSidebarDensity] = useState(0);
-  const sidebarRef = useRef<HTMLElement | null>(null);
   const menus = useMemo(() => getMenus(user, unreadNotifCount, language), [user, unreadNotifCount, language]);
   const currentPath = useMemo(() => router.asPath.split("?")[0], [router.asPath]);
   const roleLabel = useMemo(() => getRoleLabel(user.role), [user.role]);
@@ -137,38 +135,8 @@ export default function DashboardLayout({
     };
   }, [open]);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    let cancelled = false;
-    const measureFit = async () => {
-      const levels = [0, 1, 2, 3];
-      for (const level of levels) {
-        if (cancelled) return;
-        setSidebarDensity(level);
-        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-        const el = sidebarRef.current;
-        if (!el) return;
-        if (el.scrollHeight <= window.innerHeight) {
-          return;
-        }
-      }
-    };
-
-    void measureFit();
-    const onResize = () => {
-      void measureFit();
-    };
-    window.addEventListener("resize", onResize);
-    return () => {
-      cancelled = true;
-      window.removeEventListener("resize", onResize);
-    };
-  }, [open, menus.length, language, user.role]);
-
   return (
-    <div className="dashboard-shell min-h-screen bg-app text-body">
+    <div className="dashboard-shell h-[100dvh] overflow-hidden bg-app text-body">
       {open ? (
         <button
           type="button"
@@ -177,10 +145,9 @@ export default function DashboardLayout({
         />
       ) : null}
 
-      <div className="min-h-screen sm:flex">
+      <div className="h-[100dvh] sm:flex">
         <aside
-          ref={sidebarRef}
-          className={`dashboard-sidebar dashboard-sidebar-density-${sidebarDensity} fixed inset-y-0 left-0 z-50 h-[100dvh] w-72 overflow-hidden transform border-r border-soft bg-surface p-6 shadow-lg transition-transform duration-300 ease-out sm:sticky sm:top-0 sm:self-start sm:h-[100dvh] sm:translate-x-0 ${
+          className={`dashboard-sidebar fixed inset-y-0 left-0 z-50 flex h-[100dvh] w-72 flex-col overflow-hidden transform border-r border-soft bg-surface p-4 shadow-lg transition-transform duration-300 ease-out sm:sticky sm:top-0 sm:self-start sm:h-[100dvh] sm:translate-x-0 lg:p-5 ${
             open ? "translate-x-0" : "-translate-x-full"
           }`}
         >
@@ -203,7 +170,7 @@ export default function DashboardLayout({
             </div>
           </div>
 
-          <nav className="mt-6 space-y-2">
+          <nav className="dashboard-nav-grid" style={{ ["--sidebar-menu-count" as string]: String(menus.length + 1) }}>
             {menus.map((menu) => {
               const active = isMenuActive(menu.href, currentPath);
               return (
@@ -234,7 +201,7 @@ export default function DashboardLayout({
               data-confirm-title="Konfirmasi Logout"
               data-confirm-confirm-label="Ya, Logout"
               data-confirm-tone="danger"
-              className="dashboard-nav-link mt-2"
+              className="dashboard-nav-link"
               onClick={() => setOpen(false)}
             >
               <span className="flex items-center gap-3">
@@ -247,7 +214,7 @@ export default function DashboardLayout({
           </nav>
         </aside>
 
-        <main className="dashboard-main relative flex flex-1 flex-col px-4 pb-6 pt-4 sm:px-8 sm:pb-8 sm:pt-8">
+        <main className="dashboard-main relative flex h-[100dvh] flex-1 flex-col overflow-y-auto px-4 pb-6 pt-4 sm:px-8 sm:pb-8 sm:pt-8">
           <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
             <div className="dashboard-main-orb dashboard-main-orb-a" />
             <div className="dashboard-main-orb dashboard-main-orb-b" />

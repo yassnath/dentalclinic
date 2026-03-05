@@ -322,9 +322,9 @@ export default function HomePage() {
           }}
         >
           <div className="landing-grid pointer-events-none absolute inset-0 opacity-60" style={{ backgroundImage: "linear-gradient(color-mix(in srgb, var(--border-color) 35%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--border-color) 35%, transparent) 1px, transparent 1px)", backgroundSize: "34px 34px" }} />
-          <div className="relative z-10 mx-auto grid max-w-7xl items-center gap-10 px-6 pb-16 pt-8 md:grid-cols-2 md:pb-24 md:pt-12">
+          <div className="relative z-10 mx-auto grid max-w-7xl items-start gap-10 px-6 pb-16 pt-4 md:grid-cols-2 md:pb-20 md:pt-7">
             <div data-reveal>
-              <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
+              <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
                 <i className="fas fa-shield-heart" />
                 Sistem Klinik Terintegrasi
               </span>
@@ -366,24 +366,24 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="relative mx-auto w-full max-w-xl" data-reveal>
-              <div className="landing-panel relative overflow-hidden rounded-[2rem] border border-soft bg-white p-4 shadow-2xl shadow-blue-500/20 sm:p-6">
-                <div className="mb-4 flex items-center justify-between rounded-xl border border-soft bg-blue-50 px-4 py-3">
+            <div className="relative mx-auto w-full max-w-xl md:max-w-lg lg:max-w-[34rem]" data-reveal>
+              <div className="landing-panel relative overflow-hidden rounded-[2rem] border border-soft bg-white p-3 shadow-2xl shadow-blue-500/20 sm:p-4">
+                <div className="mb-3 flex items-center justify-between rounded-xl border border-soft bg-blue-50 px-3 py-2.5">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">Dashboard Ringkas</p>
                     <p className="text-sm font-semibold text-secondary">Pantau alur pasien hari ini</p>
                   </div>
                   <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-bold text-green-700">Live</span>
                 </div>
-                <Image src="/images/login.png" alt="Ilustrasi Klinik" width={640} height={640} className="mx-auto w-full max-w-md" priority />
+                <Image src="/images/login.png" alt="Ilustrasi Klinik" width={640} height={640} className="mx-auto w-full max-w-[24rem] sm:max-w-[26rem]" priority />
               </div>
 
-              <div className="landing-float-card absolute -left-5 top-8 hidden w-44 rounded-2xl border border-soft bg-white p-4 shadow-lg md:block" data-reveal>
+              <div className="landing-float-card absolute -left-5 top-6 hidden w-44 rounded-2xl border border-soft bg-white p-4 shadow-lg md:block" data-reveal>
                 <p className="text-xs font-semibold uppercase tracking-wide text-green-700">Check-in</p>
                 <p className="mt-1 text-sm font-semibold text-secondary">15 pasien sudah hadir</p>
               </div>
 
-              <div className="landing-float-card absolute -bottom-5 right-2 hidden w-48 rounded-2xl border border-soft bg-white p-4 shadow-lg md:block" data-reveal>
+              <div className="landing-float-card absolute bottom-3 right-2 hidden w-48 rounded-2xl border border-soft bg-white p-4 shadow-lg md:block" data-reveal>
                 <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">Notifikasi</p>
                 <p className="mt-1 text-sm font-semibold text-secondary">8 update antrian masuk</p>
               </div>
