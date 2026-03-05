@@ -5,11 +5,14 @@ import { prisma } from "@/lib/prisma";
 import { withQuery } from "@/lib/http";
 
 type RegisterValues = {
+  provinsi: string;
+  kota_kabupaten: string;
   nik: string;
   name: string;
   tempat_lahir: string;
   tanggal_lahir: string;
   jenis_kelamin: "Laki-laki" | "Perempuan" | "";
+  golongan_darah: string;
   alamat: string;
   rt_rw: string;
   kelurahan_desa: string;
@@ -71,16 +74,26 @@ function normalizeDateInput(raw: string) {
   return "";
 }
 
+function normalizeRtRw(raw: string) {
+  const normalized = raw.replace(/\s+/g, "").replace(/[^0-9/\\-]/g, "");
+  const match = normalized.match(/(\d{1,3})[\/\\-](\d{1,3})/);
+  if (!match) return normalized.slice(0, 15).toUpperCase();
+  return `${match[1].padStart(3, "0")}/${match[2].padStart(3, "0")}`;
+}
+
 function normalizeForValidation(values: RegisterValues): RegisterValues {
   return {
     ...values,
+    provinsi: values.provinsi.trim().toUpperCase(),
+    kota_kabupaten: values.kota_kabupaten.trim().toUpperCase(),
     nik: values.nik.replace(/\D/g, "").slice(0, 16),
     name: values.name.trim(),
     tempat_lahir: values.tempat_lahir.trim(),
     tanggal_lahir: normalizeDateInput(values.tanggal_lahir),
     jenis_kelamin: normalizeGender(values.jenis_kelamin),
+    golongan_darah: values.golongan_darah.trim().toUpperCase() || "-",
     alamat: values.alamat.trim(),
-    rt_rw: values.rt_rw.replace(/\s+/g, "").toUpperCase(),
+    rt_rw: normalizeRtRw(values.rt_rw),
     kelurahan_desa: values.kelurahan_desa.trim(),
     kecamatan: values.kecamatan.trim(),
     agama: values.agama.trim(),
@@ -111,8 +124,12 @@ async function ensureUniqueUsername(name: string, nik: string) {
   throw new Error("Gagal membuat username unik.");
 }
 
-function composeAddress(values: RegisterValues) {
-  const joined = `${values.alamat}, RT/RW ${values.rt_rw}, Kel/Desa ${values.kelurahan_desa}, Kecamatan ${values.kecamatan}`;
+function composeAddress(
+  values: Pick<RegisterValues, "alamat" | "rt_rw" | "kelurahan_desa" | "kecamatan"> &
+    Partial<Pick<RegisterValues, "provinsi" | "kota_kabupaten">>,
+) {
+  const region = [values.provinsi ?? "", values.kota_kabupaten ?? ""].filter(Boolean).join(", ");
+  const joined = `${region ? `${region}, ` : ""}${values.alamat}, RT/RW ${values.rt_rw}, Kel/Desa ${values.kelurahan_desa}, Kecamatan ${values.kecamatan}`;
   return joined.slice(0, 255);
 }
 
@@ -127,6 +144,8 @@ function isValidIsoDate(value: string) {
 }
 
 const registerSchema = z.object({
+  provinsi: z.string().min(2).max(120).optional(),
+  kota_kabupaten: z.string().min(2).max(120).optional(),
   nik: z.string().regex(/^[0-9]{16}$/, "NIK harus 16 digit."),
   name: z.string().min(2, "Nama minimal 2 karakter.").max(255),
   tempat_lahir: z.string().min(2, "Tempat lahir wajib diisi.").max(120),
@@ -135,8 +154,9 @@ const registerSchema = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Format tanggal lahir tidak valid.")
     .refine((value) => isValidIsoDate(value), "Tanggal lahir tidak valid."),
   jenis_kelamin: z.enum(["Laki-laki", "Perempuan"]),
+  golongan_darah: z.string().min(1).max(4).optional(),
   alamat: z.string().min(4, "Alamat wajib diisi.").max(255),
-  rt_rw: z.string().min(3, "RT/RW wajib diisi.").max(15),
+  rt_rw: z.string().regex(/^[0-9]{3}\/[0-9]{3}$/, "Format RT/RW harus 001/002."),
   kelurahan_desa: z.string().min(2, "Kel/Desa wajib diisi.").max(120),
   kecamatan: z.string().min(2, "Kecamatan wajib diisi.").max(120),
   agama: z.string().min(2, "Agama wajib diisi.").max(32),
@@ -170,6 +190,10 @@ function resolveRegisterErrorMessage(reason: string) {
     return "Koneksi database deployment belum stabil. Coba ulang dalam beberapa detik.";
   }
 
+  if (text.includes("timed out") || text.includes("timeout")) {
+    return "Koneksi database timeout. Coba ulang beberapa saat lagi.";
+  }
+
   if (text.includes("unique constraint")) {
     return "Data sudah terdaftar. Cek kembali email atau NIK.";
   }
@@ -189,11 +213,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const submittedValues: RegisterValues = {
+    provinsi: sanitizeInput(pickBodyString(req.body?.provinsi)),
+    kota_kabupaten: sanitizeInput(pickBodyString(req.body?.kota_kabupaten)),
     nik: sanitizeInput(pickBodyString(req.body?.nik)),
     name: sanitizeInput(pickBodyString(req.body?.name)),
     tempat_lahir: sanitizeInput(pickBodyString(req.body?.tempat_lahir)),
     tanggal_lahir: sanitizeInput(pickBodyString(req.body?.tanggal_lahir)),
     jenis_kelamin: normalizeGender(sanitizeInput(pickBodyString(req.body?.jenis_kelamin))),
+    golongan_darah: sanitizeInput(pickBodyString(req.body?.golongan_darah)),
     alamat: sanitizeInput(pickBodyString(req.body?.alamat)),
     rt_rw: sanitizeInput(pickBodyString(req.body?.rt_rw)),
     kelurahan_desa: sanitizeInput(pickBodyString(req.body?.kelurahan_desa)),
@@ -239,22 +266,43 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const hash = await bcrypt.hash(parsed.data.password, 10);
     const username = await ensureUniqueUsername(parsed.data.name, parsed.data.nik);
     const now = new Date();
-
-    const user = await prisma.user.create({
-      data: {
-        name: parsed.data.name,
-        username,
-        email: parsed.data.email,
-        password: hash,
-        role: "pasien",
-        tanggalLahir: new Date(parsed.data.tanggal_lahir),
-        jenisKelamin: parsed.data.jenis_kelamin,
-        nik: parsed.data.nik,
-        alamat: composeAddress(parsed.data),
-        createdAt: now,
-        updatedAt: now,
-      },
-    });
+    let user;
+    try {
+      user = await prisma.user.create({
+        data: {
+          name: parsed.data.name,
+          username,
+          email: parsed.data.email,
+          password: hash,
+          role: "pasien",
+          tanggalLahir: new Date(parsed.data.tanggal_lahir),
+          jenisKelamin: parsed.data.jenis_kelamin,
+          nik: parsed.data.nik,
+          alamat: composeAddress(parsed.data),
+          createdAt: now,
+          updatedAt: now,
+        },
+      });
+    } catch (createUserError) {
+      const reason = createUserError instanceof Error ? createUserError.message : "create user failed";
+      // Fallback for deployment schema drift: create the account with minimum required fields.
+      if (/(unknown argument|column|field|schema|invalid)/i.test(reason)) {
+        user = await prisma.user.create({
+          data: {
+            name: parsed.data.name,
+            username,
+            email: parsed.data.email,
+            password: hash,
+            role: "pasien",
+            nik: parsed.data.nik,
+            createdAt: now,
+            updatedAt: now,
+          },
+        });
+      } else {
+        throw createUserError;
+      }
+    }
 
     let identitySyncWarning: string | null = null;
     try {
@@ -313,6 +361,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   } catch (error) {
     const reason = error instanceof Error ? error.message : "Unknown error";
+    console.error("[register] failed:", reason);
     redirectTo(res, "/register", {
       error: process.env.NODE_ENV === "development" ? `Database error: ${reason}` : resolveRegisterErrorMessage(reason),
     });

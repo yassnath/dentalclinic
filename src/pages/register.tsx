@@ -3,13 +3,17 @@ import Link from "next/link";
 import type { GetServerSideProps } from "next";
 import { useEffect, useRef, useState } from "react";
 import PasswordInput from "@/components/PasswordInput";
+import ValidationPopup, { type ValidationType } from "@/components/ValidationPopup";
 
 type RegisterValues = {
+  provinsi: string;
+  kota_kabupaten: string;
   nik: string;
   name: string;
   tempat_lahir: string;
   tanggal_lahir: string;
   jenis_kelamin: "Laki-laki" | "Perempuan" | "";
+  golongan_darah: string;
   alamat: string;
   rt_rw: string;
   kelurahan_desa: string;
@@ -30,11 +34,14 @@ type RegisterPageProps = {
 
 function emptyValues(): RegisterValues {
   return {
+    provinsi: "",
+    kota_kabupaten: "",
     nik: "",
     name: "",
     tempat_lahir: "",
     tanggal_lahir: "",
     jenis_kelamin: "",
+    golongan_darah: "-",
     alamat: "",
     rt_rw: "",
     kelurahan_desa: "",
@@ -94,11 +101,14 @@ export const getServerSideProps: GetServerSideProps<RegisterPageProps> = async (
 };
 
 type KtpFieldKey =
+  | "provinsi"
+  | "kota_kabupaten"
   | "nik"
   | "name"
   | "tempat_lahir"
   | "tanggal_lahir"
   | "jenis_kelamin"
+  | "golongan_darah"
   | "alamat"
   | "rt_rw"
   | "kelurahan_desa"
@@ -149,11 +159,14 @@ async function warmupOcrWorker() {
 }
 
 const KTP_FIELDS: KtpFieldKey[] = [
+  "provinsi",
+  "kota_kabupaten",
   "nik",
   "name",
   "tempat_lahir",
   "tanggal_lahir",
   "jenis_kelamin",
+  "golongan_darah",
   "alamat",
   "rt_rw",
   "kelurahan_desa",
@@ -265,10 +278,18 @@ function normalizeBerlakuHingga(raw: string) {
   return text;
 }
 
+function normalizeGolonganDarah(raw: string) {
+  const value = cleanLine(raw).toUpperCase();
+  if (!value) return "";
+  if (value.includes("-")) return "-";
+  const match = value.match(/\b(AB|A|B|O)\b/);
+  return match?.[1] ?? "";
+}
+
 function trimAtNextLabel(value: string) {
   return value
     .replace(
-      /\b(?:RT\s*\/?\s*RW|KEL\s*\/?\s*DESA|KELURAHAN|DESA|KECAMATAN|AGAMA|STATUS\s*PERKAWINAN|STATUS\s*KAWIN|PEKERJAAN|KEWARGANEGARAAN|BERLAKU\s*HINGGA)\b.*$/i,
+      /\b(?:RT\s*\/?\s*RW|KEL\s*\/?\s*DESA|KELURAHAN|DESA|KECAMATAN|AGAMA|STATUS\s*PERKAWINAN|STATUS\s*KAWIN|PEKERJAAN|KEWARGANEGARAAN|BERLAKU\s*HINGGA|PROVINSI|KABUPATEN|KOTA|GOL\.?\s*DARAH)\b.*$/i,
       "",
     )
     .trim();
@@ -277,10 +298,13 @@ function trimAtNextLabel(value: string) {
 function detectLabel(line: string): KtpFieldKey | null {
   const token = normalizeLabelToken(line);
   if (!token) return null;
+  if (token.startsWith("PROVINSI")) return "provinsi";
+  if (token.startsWith("KABUPATEN") || token.startsWith("KOTA")) return "kota_kabupaten";
   if (token.includes("NIK")) return "nik";
   if (token.includes("NAMA")) return "name";
   if ((token.includes("TEMPAT") || token.includes("TMP")) && token.includes("LAHIR")) return "tempat_lahir";
   if (token.includes("JENISKELAMIN")) return "jenis_kelamin";
+  if (token.includes("GOLDARAH") || token.includes("GOLDRH")) return "golongan_darah";
   if (token.startsWith("ALAMAT")) return "alamat";
   if (token.includes("RTRW") || (token.includes("RT") && token.includes("RW"))) return "rt_rw";
   if (token.includes("KELDESA") || token.includes("KELURAHAN") || token.includes("DESA")) return "kelurahan_desa";
@@ -295,11 +319,14 @@ function detectLabel(line: string): KtpFieldKey | null {
 
 function stripLabelFromLine(line: string, field: KtpFieldKey) {
   const patterns: Record<KtpFieldKey, RegExp> = {
+    provinsi: /^PROVINSI\s*[:\-]?\s*/i,
+    kota_kabupaten: /^(KABUPATEN|KOTA)\s*[:\-]?\s*/i,
     nik: /^N[IL1]?K\s*[:\-]?\s*/i,
     name: /^NAMA\s*[:\-]?\s*/i,
     tempat_lahir: /^(TEMPAT\s*\/?\s*TGL\s*LAHIR|TEMPAT\s*LAHIR|TMP\s*\/?\s*TGL\s*LAHIR|TMP\s*LAHIR)\s*[:\-]?\s*/i,
     tanggal_lahir: /^(TEMPAT\s*\/?\s*TGL\s*LAHIR|TGL\s*LAHIR)\s*[:\-]?\s*/i,
     jenis_kelamin: /^JENIS\s*KELAMIN\s*[:\-]?\s*/i,
+    golongan_darah: /^GOL\.?\s*DARAH\s*[:\-]?\s*/i,
     alamat: /^ALAMAT\s*[:\-]?\s*/i,
     rt_rw: /^RT\s*\/?\s*RW\s*[:\-]?\s*/i,
     kelurahan_desa: /^(KEL\s*\/?\s*DESA|KELURAHAN|DESA)\s*[:\-]?\s*/i,
@@ -333,11 +360,54 @@ function splitTempatTanggal(raw: string) {
   return { tempat, tanggal };
 }
 
+function collectRtRwCandidates(raw: string) {
+  const normalized = normalizeOcrNumeric(raw).replace(/\s+/g, "");
+  const matches = [...normalized.matchAll(/(\d{1,3})[\/\\-](\d{1,3})/g)];
+  return matches.map((match) => ({
+    rt: match[1],
+    rw: match[2],
+  }));
+}
+
+function scoreRtRwCandidate(input: { rt: string; rw: string }, hasLabelContext: boolean) {
+  const rt = input.rt.replace(/\D/g, "");
+  const rw = input.rw.replace(/\D/g, "");
+  if (!rt || !rw) return -100;
+  let score = 0;
+  if (hasLabelContext) score += 4;
+  if (rt.length === 3) score += 3;
+  else if (rt.length === 2) score += 1;
+  if (rw.length === 3) score += 3;
+  else if (rw.length === 2) score += 1;
+
+  const rtNum = Number(rt);
+  const rwNum = Number(rw);
+  if (Number.isFinite(rtNum) && Number.isFinite(rwNum)) {
+    // Penalize date-like pair such as 30/01 that often appears in TTL.
+    if (rtNum >= 1 && rtNum <= 31 && rwNum >= 1 && rwNum <= 12) score -= 2;
+    if (rtNum === 0 && rwNum === 0) score -= 3;
+  }
+
+  return score;
+}
+
+function pickLikelyRtRw(raw: string, hasLabelContext = false) {
+  const candidates = collectRtRwCandidates(raw);
+  if (!candidates.length) return "";
+  const ranked = candidates
+    .map((candidate) => ({
+      value: `${candidate.rt.padStart(3, "0")}/${candidate.rw.padStart(3, "0")}`,
+      score: scoreRtRwCandidate(candidate, hasLabelContext),
+    }))
+    .sort((a, b) => b.score - a.score);
+  return ranked[0]?.value ?? "";
+}
+
 function normalizeRtRw(raw: string) {
-  const compact = raw.replace(/\s+/g, "");
-  const match = normalizeOcrNumeric(compact).match(/(\d{1,3})[\/|\\-](\d{1,3})/);
-  if (!match) return compact.toUpperCase();
-  return `${match[1].padStart(3, "0")}/${match[2].padStart(3, "0")}`;
+  const picked = pickLikelyRtRw(raw, /RT\s*\/?\s*RW/i.test(raw));
+  if (picked) return picked;
+  const compact = normalizeOcrNumeric(raw).replace(/\s+/g, "");
+  return compact.replace(/[^0-9/\\-]/g, "").slice(0, 15).toUpperCase();
 }
 
 function decodeNikInfo(nik: string): { tanggal_lahir?: string; jenis_kelamin?: "Laki-laki" | "Perempuan" } {
@@ -411,6 +481,7 @@ function parseKtpText(raw: string): Partial<RegisterValues> {
   const result: Partial<RegisterValues> = {
     kewarganegaraan: "WNI",
     berlaku_hingga: "SEUMUR HIDUP",
+    golongan_darah: "-",
   };
 
   for (let i = 0; i < lines.length; i += 1) {
@@ -441,11 +512,19 @@ function parseKtpText(raw: string): Partial<RegisterValues> {
       const truncated = value.split(/GOL\.?\s*DARAH/i)[0]?.trim() ?? value;
       const gender = normalizeGender(truncated);
       if (gender) result.jenis_kelamin = gender;
+      const blood = normalizeGolonganDarah(value);
+      if (blood) result.golongan_darah = blood;
+      continue;
+    }
+
+    if (label === "golongan_darah") {
+      const blood = normalizeGolonganDarah(value || nextLine);
+      if (blood) result.golongan_darah = blood;
       continue;
     }
 
     if (label === "rt_rw") {
-      const parsedRtRw = normalizeRtRw(value || nextLine);
+      const parsedRtRw = pickLikelyRtRw(`${line} ${value} ${nextLine}`, true) || normalizeRtRw(value || nextLine);
       if (parsedRtRw) result.rt_rw = parsedRtRw;
       continue;
     }
@@ -468,6 +547,11 @@ function parseKtpText(raw: string): Partial<RegisterValues> {
       continue;
     }
 
+    if (label === "provinsi" && value) result.provinsi = value;
+    if (label === "kota_kabupaten" && value) {
+      const cityPrefix = /KABUPATEN/i.test(line) ? "KABUPATEN" : /KOTA/i.test(line) ? "KOTA" : "";
+      result.kota_kabupaten = cityPrefix ? `${cityPrefix} ${value}`.trim() : value;
+    }
     if (label === "kelurahan_desa" && value) result.kelurahan_desa = value;
     if (label === "kecamatan" && value) result.kecamatan = value;
     if (label === "agama" && value) result.agama = value;
@@ -532,11 +616,24 @@ function parseKtpText(raw: string): Partial<RegisterValues> {
 
   if (!result.rt_rw) {
     const rtRwFallback = fullTextNormalized.match(/RT\s*\/?\s*RW\s*[:\-]?\s*([0-9]{1,3}\s*[\/\\-]\s*[0-9]{1,3})/i)?.[1];
-    if (rtRwFallback) result.rt_rw = normalizeRtRw(rtRwFallback);
+    if (rtRwFallback) result.rt_rw = pickLikelyRtRw(rtRwFallback, true) || normalizeRtRw(rtRwFallback);
   }
   if (!result.rt_rw) {
-    const genericRtRw = fullTextNormalized.match(/\b([0-9]{1,3}\s*[\/\\-]\s*[0-9]{1,3})\b/)?.[1];
-    if (genericRtRw) result.rt_rw = normalizeRtRw(genericRtRw);
+    const genericRtRw = pickLikelyRtRw(fullTextNormalized, false);
+    if (/^\d{3}\/\d{3}$/.test(genericRtRw)) result.rt_rw = genericRtRw;
+  }
+
+  if (!result.provinsi) {
+    const provinsi = pickRegexGroup(fullText, [/(?:^|\n)\s*PROVINSI\s+([^\n]+)/i]);
+    if (provinsi) result.provinsi = provinsi;
+  }
+  if (!result.kota_kabupaten) {
+    const kotaKabupatenLine = fullText.match(/(?:^|\n)\s*((?:KABUPATEN|KOTA)\s+[^\n]+)/i)?.[1];
+    if (kotaKabupatenLine) result.kota_kabupaten = cleanLine(kotaKabupatenLine);
+  }
+  if (!result.golongan_darah) {
+    const golDarah = pickRegexGroup(fullText, [/GOL\.?\s*DARAH\s*[:\-]?\s*([ABO\-]{1,2})/i]);
+    if (golDarah) result.golongan_darah = normalizeGolonganDarah(golDarah);
   }
 
   if (!result.alamat) {
@@ -582,11 +679,14 @@ function parseKtpText(raw: string): Partial<RegisterValues> {
 
   const normalizeTextField = (value: string | undefined) => (value ? cleanLine(value) : "");
   return {
+    provinsi: normalizeFieldForVote("provinsi", result.provinsi ?? ""),
+    kota_kabupaten: normalizeFieldForVote("kota_kabupaten", result.kota_kabupaten ?? ""),
     nik: (result.nik ?? "").replace(/\D/g, "").slice(0, 16),
     name: normalizeFieldForVote("name", (result.name ?? "").replace(/\b(?:PROVINSI|KOTA|KABUPATEN)\b.*$/i, "")),
     tempat_lahir: normalizeFieldForVote("tempat_lahir", result.tempat_lahir ?? ""),
     tanggal_lahir: parseKtpDate(result.tanggal_lahir ?? ""),
     jenis_kelamin: normalizeGender(result.jenis_kelamin ?? ""),
+    golongan_darah: normalizeGolonganDarah(result.golongan_darah ?? "-") || "-",
     alamat: normalizeTextField(result.alamat),
     rt_rw: normalizeRtRw(result.rt_rw ?? ""),
     kelurahan_desa: normalizeTextField(result.kelurahan_desa),
@@ -615,6 +715,9 @@ function normalizeFieldForVote(field: KtpFieldKey, raw: string) {
   if (field === "rt_rw") {
     return normalizeRtRw(value);
   }
+  if (field === "golongan_darah") {
+    return normalizeGolonganDarah(value) || "-";
+  }
   if (field === "kewarganegaraan") {
     return normalizeKewarganegaraan(value);
   }
@@ -629,6 +732,9 @@ function normalizeFieldForVote(field: KtpFieldKey, raw: string) {
   }
 
   const upper = normalizeAlphaOcr(value);
+  if (field === "provinsi" || field === "kota_kabupaten") {
+    return upper.replace(/[^A-Z0-9 '.,/-]/g, " ").replace(/\s+/g, " ").trim();
+  }
   if (field === "name") return upper.replace(/[^A-Z '.-]/g, " ").replace(/\s+/g, " ").trim();
   if (field === "tempat_lahir") return upper.replace(/[^A-Z '.,-]/g, " ").replace(/\s+/g, " ").trim();
   if (field === "alamat") return upper.replace(/[^A-Z0-9 '.,/()-]/g, " ").replace(/\s+/g, " ").trim();
@@ -653,6 +759,7 @@ function mergeParsedKtpResults(votes: Array<{ data: Partial<RegisterValues>; wei
       if (field === "nik" && normalized.length !== 16) continue;
       if (field === "tanggal_lahir" && !/^\d{4}-\d{2}-\d{2}$/.test(normalized)) continue;
       if (field === "jenis_kelamin" && normalized !== "Laki-laki" && normalized !== "Perempuan") continue;
+      if (field === "golongan_darah" && !["-", "A", "B", "AB", "O"].includes(normalized)) continue;
 
       const current = scoreMap.get(normalized) ?? { score: 0, rawLength: 0 };
       current.score += Math.max(1, vote.weight);
@@ -830,11 +937,14 @@ async function buildOcrSources(source: Blob): Promise<Array<{ name: string; blob
 }
 
 const OCR_EARLY_STOP_FIELDS: KtpFieldKey[] = [
+  "provinsi",
+  "kota_kabupaten",
   "nik",
   "name",
   "tempat_lahir",
   "tanggal_lahir",
   "jenis_kelamin",
+  "golongan_darah",
   "alamat",
   "rt_rw",
   "kelurahan_desa",
@@ -986,6 +1096,7 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
   const [scanPreviewUrl, setScanPreviewUrl] = useState("");
   const [lightScore, setLightScore] = useState(0);
   const [lightStatus, setLightStatus] = useState<ScanLightStatus>("unknown");
+  const [scanPopup, setScanPopup] = useState<{ type: ValidationType; message: string } | null>(null);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -1182,12 +1293,22 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
 
   const onFieldChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = event.target;
-    setFormValues((prev) => ({ ...prev, [name]: value }));
+    setFormValues((prev) => ({
+      ...prev,
+      [name]:
+        name === "rt_rw"
+          ? normalizeRtRw(value)
+          : name === "golongan_darah"
+            ? normalizeGolonganDarah(value) || value
+            : value,
+    }));
   };
 
   const applyKtpResult = (payload: Partial<RegisterValues>) => {
     setFormValues((prev) => ({
       ...prev,
+      provinsi: payload.provinsi?.trim() ? payload.provinsi.trim() : prev.provinsi,
+      kota_kabupaten: payload.kota_kabupaten?.trim() ? payload.kota_kabupaten.trim() : prev.kota_kabupaten,
       nik: payload.nik?.trim() ? payload.nik.trim() : prev.nik,
       name: payload.name?.trim() ? payload.name.trim() : prev.name,
       tempat_lahir: payload.tempat_lahir?.trim() ? payload.tempat_lahir.trim() : prev.tempat_lahir,
@@ -1196,6 +1317,7 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
         payload.jenis_kelamin === "Laki-laki" || payload.jenis_kelamin === "Perempuan"
           ? payload.jenis_kelamin
           : prev.jenis_kelamin,
+      golongan_darah: payload.golongan_darah?.trim() ? payload.golongan_darah.trim() : prev.golongan_darah,
       alamat: payload.alamat?.trim() ? payload.alamat.trim() : prev.alamat,
       rt_rw: payload.rt_rw?.trim() ? payload.rt_rw.trim() : prev.rt_rw,
       kelurahan_desa: payload.kelurahan_desa?.trim() ? payload.kelurahan_desa.trim() : prev.kelurahan_desa,
@@ -1213,14 +1335,17 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
     const canvas = canvasRef.current;
     if (!video || !canvas) {
       setScanError("Komponen kamera belum siap.");
+      setScanPopup({ type: "error", message: "Scan gagal: komponen kamera belum siap." });
       return;
     }
     if (!cameraReady || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || video.videoWidth === 0 || video.videoHeight === 0) {
       setScanError("Kamera belum siap. Tunggu sampai preview muncul jelas.");
+      setScanPopup({ type: "warning", message: "Kamera belum siap. Tunggu preview terlihat jelas." });
       return;
     }
     if (lightStatus === "unknown" || lightStatus === "low") {
       setScanError("Cahaya masih kurang. Tingkatkan cahaya sampai minimal status Cukup Cahaya.");
+      setScanPopup({ type: "warning", message: "Pencahayaan belum cukup. Tingkatkan cahaya sebelum scan." });
       return;
     }
 
@@ -1269,11 +1394,14 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
       applyKtpResult(extracted);
 
       const requiredKeys: KtpFieldKey[] = [
+        "provinsi",
+        "kota_kabupaten",
         "nik",
         "name",
         "tempat_lahir",
         "tanggal_lahir",
         "jenis_kelamin",
+        "golongan_darah",
         "alamat",
         "rt_rw",
         "kelurahan_desa",
@@ -1285,11 +1413,14 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
         "berlaku_hingga",
       ];
       const labels: Record<KtpFieldKey, string> = {
+        provinsi: "Provinsi",
+        kota_kabupaten: "Kab/Kota",
         nik: "NIK",
         name: "Nama",
         tempat_lahir: "Tempat Lahir",
         tanggal_lahir: "Tanggal Lahir",
         jenis_kelamin: "Jenis Kelamin",
+        golongan_darah: "Golongan Darah",
         alamat: "Alamat",
         rt_rw: "RT/RW",
         kelurahan_desa: "Kel/Desa",
@@ -1309,6 +1440,7 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
       if (filledCount === 0) {
         setScanError("Teks KTP tidak terbaca jelas. Coba posisi lebih terang dan fokus.");
         setScanMessage("");
+        setScanPopup({ type: "error", message: "Scan gagal. Teks KTP tidak terbaca jelas." });
       } else if (missing.length > 0) {
         const previewMissing = missing
           .slice(0, 4)
@@ -1318,15 +1450,18 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
         const topConfidence = ocrCandidates[0]?.confidence ? ` (confidence terbaik: ${Math.round(ocrCandidates[0].confidence)}%)` : "";
         setScanMessage(`Scan berhasil sebagian. ${filledCount} kolom terisi otomatis${topConfidence}.`);
         setScanError(`Kolom yang belum terbaca: ${previewMissing}${suffix}. Silakan koreksi manual atau scan ulang.`);
+        setScanPopup({ type: "warning", message: `Scan berhasil sebagian. ${filledCount}/${requiredKeys.length} kolom terisi.` });
       } else {
         const topConfidence = ocrCandidates[0]?.confidence ? ` (confidence terbaik: ${Math.round(ocrCandidates[0].confidence)}%)` : "";
         setScanMessage(`Scan selesai. Semua kolom KTP berhasil diisi otomatis${topConfidence}.`);
         setScanError("");
+        setScanPopup({ type: "success", message: "Scan KTP berhasil. Semua kolom berhasil dipetakan." });
       }
     } catch {
       setScanError("Scan KTP gagal diproses. Coba ulangi dengan pencahayaan lebih baik.");
       setScanMessage("");
       setScanProgress(0);
+      setScanPopup({ type: "error", message: "Scan KTP gagal diproses. Silakan scan ulang." });
     } finally {
       setScanBusy(false);
       setScanPreviewUrl("");
@@ -1467,6 +1602,14 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
+                  <label className="auth-label">Provinsi</label>
+                  <input type="text" name="provinsi" required value={formValues.provinsi} onChange={onFieldChange} className="auth-input" placeholder="PROVINSI JAWA TIMUR" />
+                </div>
+                <div>
+                  <label className="auth-label">Kabupaten/Kota</label>
+                  <input type="text" name="kota_kabupaten" required value={formValues.kota_kabupaten} onChange={onFieldChange} className="auth-input" placeholder="KOTA MALANG" />
+                </div>
+                <div>
                   <label className="auth-label">NIK</label>
                   <input type="text" name="nik" required value={formValues.nik} onChange={onFieldChange} inputMode="numeric" pattern="^[0-9]{16}$" maxLength={16} className="auth-input" placeholder="16 digit" />
                 </div>
@@ -1491,8 +1634,29 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
                   </select>
                 </div>
                 <div>
+                  <label className="auth-label">Golongan Darah</label>
+                  <select name="golongan_darah" required value={formValues.golongan_darah} onChange={onFieldChange} className="auth-input">
+                    <option value="-">-</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="AB">AB</option>
+                    <option value="O">O</option>
+                  </select>
+                </div>
+                <div>
                   <label className="auth-label">RT/RW</label>
-                  <input type="text" name="rt_rw" required value={formValues.rt_rw} onChange={onFieldChange} className="auth-input" placeholder="001/002" />
+                  <input
+                    type="text"
+                    name="rt_rw"
+                    required
+                    value={formValues.rt_rw}
+                    onChange={onFieldChange}
+                    className="auth-input"
+                    placeholder="001/002"
+                    inputMode="numeric"
+                    pattern="^[0-9]{3}/[0-9]{3}$"
+                    maxLength={7}
+                  />
                 </div>
                 <div className="sm:col-span-2">
                   <label className="auth-label">Alamat</label>
@@ -1671,6 +1835,7 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
           </div>
         </div>
       ) : null}
+      {scanPopup ? <ValidationPopup type={scanPopup.type} message={scanPopup.message} onClose={() => setScanPopup(null)} /> : null}
     </>
   );
 }
