@@ -1237,6 +1237,7 @@ table:is(.responsive-table, .theme-table) td {
 }
 
 .ktp-scan-video-shell {
+  position: relative;
   overflow: hidden;
   border-radius: 14px;
   border: 1px solid color-mix(in srgb, var(--primary-main) 24%, var(--border-color));
@@ -1248,6 +1249,60 @@ table:is(.responsive-table, .theme-table) td {
   width: 100%;
   aspect-ratio: 16 / 9;
   object-fit: cover;
+}
+
+.ktp-scan-progress-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ktp-scan-progress-mask {
+  position: absolute;
+  inset-block: 0;
+  right: 0;
+  background: linear-gradient(90deg, rgba(3, 8, 20, 0.22) 0%, rgba(3, 8, 20, 0.58) 100%);
+  transition: width 0.35s ease;
+}
+
+.ktp-scan-progress-track {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 14px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  overflow: hidden;
+}
+
+.ktp-scan-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--primary-light) 80%, #fff) 0%, var(--primary-main) 50%, var(--primary-dark) 100%);
+  transition: width 0.35s ease;
+}
+
+.ktp-scan-progress-dot {
+  position: absolute;
+  bottom: 30px;
+  transform: translateX(-50%);
+  transition: left 0.35s ease;
+}
+
+.ktp-scan-progress-dot span {
+  display: inline-flex;
+  min-width: 58px;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(5, 10, 24, 0.74);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 4px 10px;
 }
 
 .ktp-scan-close {
