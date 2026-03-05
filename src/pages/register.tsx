@@ -116,6 +116,36 @@ type OcrCandidate = {
   mode: string;
 };
 
+type OcrWorkerBundle = {
+  tesseract: typeof import("tesseract.js");
+  worker: Awaited<ReturnType<(typeof import("tesseract.js"))["createWorker"]>>;
+};
+
+let sharedOcrWorkerPromise: Promise<OcrWorkerBundle> | null = null;
+
+async function getSharedOcrWorker(): Promise<OcrWorkerBundle> {
+  if (!sharedOcrWorkerPromise) {
+    sharedOcrWorkerPromise = (async () => {
+      const tesseract = await import("tesseract.js");
+      const worker = await tesseract.createWorker(["ind", "eng"]);
+      return { tesseract, worker };
+    })().catch((error) => {
+      sharedOcrWorkerPromise = null;
+      throw error;
+    });
+  }
+
+  return sharedOcrWorkerPromise;
+}
+
+async function warmupOcrWorker() {
+  try {
+    await getSharedOcrWorker();
+  } catch {
+    // no-op: warmup gagal tidak boleh memblokir alur scan
+  }
+}
+
 const KTP_FIELDS: KtpFieldKey[] = [
   "nik",
   "name",
@@ -697,36 +727,8 @@ async function buildOcrSources(source: Blob): Promise<Array<{ name: string; blob
     lowLightCtx.putImageData(lowLight, 0, 0);
   }
 
-  const binaryCanvas = document.createElement("canvas");
-  binaryCanvas.width = scaledWidth;
-  binaryCanvas.height = scaledHeight;
-  const binaryCtx = binaryCanvas.getContext("2d", { willReadFrequently: true });
-  if (!binaryCtx) return [{ name: "original", blob: source }, { name: "enhanced", blob: await canvasToBlob(enhancedCanvas, "image/png") }];
-
-  const binarySoftCanvas = document.createElement("canvas");
-  binarySoftCanvas.width = scaledWidth;
-  binarySoftCanvas.height = scaledHeight;
-  const binarySoftCtx = binarySoftCanvas.getContext("2d", { willReadFrequently: true });
-
-  const binary = new ImageData(new Uint8ClampedArray(enhanced.data), scaledWidth, scaledHeight);
-  const binarySoft = new ImageData(new Uint8ClampedArray(enhanced.data), scaledWidth, scaledHeight);
-  const hardThreshold = lowLightMode ? 138 : 148;
-  const softThreshold = lowLightMode ? 162 : 172;
-  for (let i = 0; i < binary.data.length; i += 4) {
-    const hard = binary.data[i] > hardThreshold ? 255 : 0;
-    const soft = binarySoft.data[i] > softThreshold ? 255 : 0;
-    binary.data[i] = hard;
-    binary.data[i + 1] = hard;
-    binary.data[i + 2] = hard;
-    binarySoft.data[i] = soft;
-    binarySoft.data[i + 1] = soft;
-    binarySoft.data[i + 2] = soft;
-  }
-  binaryCtx.putImageData(binary, 0, 0);
-  if (binarySoftCtx) binarySoftCtx.putImageData(binarySoft, 0, 0);
-
-  const cropMarginX = Math.floor(scaledWidth * 0.035);
-  const cropMarginY = Math.floor(scaledHeight * 0.06);
+  const cropMarginX = Math.floor(scaledWidth * 0.03);
+  const cropMarginY = Math.floor(scaledHeight * 0.05);
   const cropWidth = Math.max(32, scaledWidth - cropMarginX * 2);
   const cropHeight = Math.max(32, scaledHeight - cropMarginY * 2);
   const croppedCanvas = document.createElement("canvas");
@@ -739,19 +741,31 @@ async function buildOcrSources(source: Blob): Promise<Array<{ name: string; blob
     croppedCtx.drawImage(enhancedCanvas, cropMarginX, cropMarginY, cropWidth, cropHeight, 0, 0, scaledWidth, scaledHeight);
   }
 
+  const textFocusCanvas = document.createElement("canvas");
+  textFocusCanvas.width = scaledWidth;
+  textFocusCanvas.height = scaledHeight;
+  const textFocusCtx = textFocusCanvas.getContext("2d");
+  if (textFocusCtx) {
+    const sx = Math.floor(scaledWidth * 0.01);
+    const sy = Math.floor(scaledHeight * 0.12);
+    const sw = Math.floor(scaledWidth * 0.82);
+    const sh = Math.floor(scaledHeight * 0.83);
+    textFocusCtx.fillStyle = "#fff";
+    textFocusCtx.fillRect(0, 0, scaledWidth, scaledHeight);
+    textFocusCtx.drawImage(croppedCanvas, sx, sy, sw, sh, 0, 0, scaledWidth, scaledHeight);
+  }
+
   const enhancedBlob = await canvasToBlob(enhancedCanvas, "image/png");
   const lowLightBlob = lowLightCtx ? await canvasToBlob(lowLightCanvas, "image/png") : enhancedBlob;
-  const binaryBlob = await canvasToBlob(binaryCanvas, "image/png");
-  const binarySoftBlob = binarySoftCtx ? await canvasToBlob(binarySoftCanvas, "image/png") : binaryBlob;
   const croppedBlob = croppedCtx ? await canvasToBlob(croppedCanvas, "image/png") : enhancedBlob;
+  const textFocusBlob = textFocusCtx ? await canvasToBlob(textFocusCanvas, "image/png") : croppedBlob;
 
   return [
     { name: "original", blob: source },
     { name: "enhanced", blob: enhancedBlob },
-    { name: "low-light", blob: lowLightBlob },
-    { name: "binary-hard", blob: binaryBlob },
-    { name: "binary-soft", blob: binarySoftBlob },
+    { name: "text-focus", blob: textFocusBlob },
     { name: "cropped", blob: croppedBlob },
+    { name: "low-light", blob: lowLightBlob },
   ];
 }
 
@@ -780,31 +794,92 @@ function countFilledKtpFields(data: Partial<RegisterValues>) {
 }
 
 async function runKtpOcr(source: Blob, onProgress?: (percent: number) => void): Promise<OcrCandidate[]> {
-  const tesseract = await import("tesseract.js");
-  const worker = await tesseract.createWorker(["ind", "eng"]);
-  const passModes = [tesseract.PSM.SPARSE_TEXT, tesseract.PSM.SINGLE_BLOCK, tesseract.PSM.AUTO];
+  const { tesseract, worker } = await getSharedOcrWorker();
+  const primaryModes = [tesseract.PSM.SINGLE_BLOCK, tesseract.PSM.SPARSE_TEXT];
+  const fallbackModes = [tesseract.PSM.AUTO];
+  const sources = await buildOcrSources(source);
+  const primarySources = sources.filter((item) => item.name !== "low-light");
+  const fallbackSources = sources.filter((item) => item.name === "low-light");
+  const seen = new Map<string, OcrCandidate>();
+  const candidates: OcrCandidate[] = [];
+  let bestFilled = 0;
+  let bestConfidence = 0;
 
-  try {
-    const sources = await buildOcrSources(source);
-    const totalSteps = Math.max(1, sources.length * passModes.length);
-    let doneSteps = 0;
-    const seen = new Map<string, OcrCandidate>();
-    const candidates: OcrCandidate[] = [];
-    let bestFilled = 0;
-    let bestConfidence = 0;
+  const upsertCandidate = (candidate: OcrCandidate) => {
+    const key = candidate.text.replace(/\s+/g, " ").trim();
+    if (key.length < 18) return;
+    const existing = seen.get(key);
+    if (!existing || candidate.confidence > existing.confidence) {
+      seen.set(key, candidate);
+    }
+  };
 
-    const upsertCandidate = (candidate: OcrCandidate) => {
-      const key = candidate.text.replace(/\s+/g, " ").trim();
-      if (key.length < 18) return;
-      const existing = seen.get(key);
-      if (!existing || candidate.confidence > existing.confidence) {
-        seen.set(key, candidate);
+  const considerCandidate = (text: string, confidence: number, sourceName: string, mode: string) => {
+    upsertCandidate({
+      text,
+      confidence,
+      source: sourceName,
+      mode,
+    });
+
+    const parsed = parseKtpText(text);
+    const filled = countFilledKtpFields(parsed);
+    if (filled > bestFilled || (filled === bestFilled && confidence > bestConfidence)) {
+      bestFilled = filled;
+      bestConfidence = confidence;
+    }
+  };
+
+  const primaryTotal = Math.max(1, primarySources.length * primaryModes.length);
+  let primaryDone = 0;
+  let stopPrimary = false;
+
+  for (const item of primarySources) {
+    for (const mode of primaryModes) {
+      await worker.setParameters({
+        tessedit_pageseg_mode: mode,
+        preserve_interword_spaces: "1",
+        user_defined_dpi: "300",
+        tessedit_char_blacklist: "[]{}<>`~",
+        tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,:;/-()'",
+        tessedit_do_invert: "0",
+        load_system_dawg: "0",
+        load_freq_dawg: "0",
+      });
+
+      const result = await worker.recognize(item.blob, { rotateAuto: true });
+      const text = result.data.text?.trim();
+      if (text) {
+        const sourceBonus = item.name === "text-focus" ? 6 : item.name === "enhanced" ? 2 : 0;
+        const confidence = Number(result.data.confidence ?? 0) + sourceBonus;
+        considerCandidate(text, confidence, item.name, String(mode));
+
+        if (bestFilled >= OCR_EARLY_STOP_FIELDS.length && bestConfidence >= 64) {
+          stopPrimary = true;
+        } else if (
+          bestFilled >= OCR_EARLY_STOP_FIELDS.length - 1 &&
+          bestConfidence >= 78 &&
+          primaryDone >= Math.ceil(primaryTotal * 0.45)
+        ) {
+          stopPrimary = true;
+        }
       }
-    };
 
-    let shouldStopEarly = false;
-    for (const item of sources) {
-      for (const mode of passModes) {
+      primaryDone += 1;
+      const progress = 42 + Math.round((primaryDone / primaryTotal) * 42);
+      onProgress?.(Math.min(84, progress));
+      if (stopPrimary) break;
+    }
+    if (stopPrimary) break;
+  }
+
+  const needFallback = bestFilled < OCR_EARLY_STOP_FIELDS.length - 1 || bestConfidence < 72;
+  if (needFallback && fallbackSources.length > 0) {
+    const fallbackTotal = Math.max(1, fallbackSources.length * fallbackModes.length);
+    let fallbackDone = 0;
+
+    for (const item of fallbackSources) {
+      for (const mode of fallbackModes) {
         await worker.setParameters({
           tessedit_pageseg_mode: mode,
           preserve_interword_spaces: "1",
@@ -812,59 +887,28 @@ async function runKtpOcr(source: Blob, onProgress?: (percent: number) => void): 
           tessedit_char_blacklist: "[]{}<>`~",
           tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,:;/-()'",
           tessedit_do_invert: "0",
-          load_system_dawg: "0",
-          load_freq_dawg: "0",
         });
+
         const result = await worker.recognize(item.blob, { rotateAuto: true });
         const text = result.data.text?.trim();
-        const confidence = Number(result.data.confidence ?? 0);
         if (text) {
-          upsertCandidate({
-            text,
-            confidence,
-            source: item.name,
-            mode: String(mode),
-          });
-
-          const parsed = parseKtpText(text);
-          const filled = countFilledKtpFields(parsed);
-          if (filled > bestFilled || (filled === bestFilled && confidence > bestConfidence)) {
-            bestFilled = filled;
-            bestConfidence = confidence;
-          }
-          if (bestFilled >= OCR_EARLY_STOP_FIELDS.length && bestConfidence >= 66) {
-            shouldStopEarly = true;
-          } else if (
-            bestFilled >= OCR_EARLY_STOP_FIELDS.length - 1 &&
-            bestConfidence >= 80 &&
-            doneSteps >= Math.ceil(totalSteps * 0.35)
-          ) {
-            shouldStopEarly = true;
-          }
+          const confidence = Number(result.data.confidence ?? 0) + 2;
+          considerCandidate(text, confidence, item.name, String(mode));
         }
-        doneSteps += 1;
-        const progress = 42 + Math.round((doneSteps / totalSteps) * 46);
+
+        fallbackDone += 1;
+        const progress = 84 + Math.round((fallbackDone / fallbackTotal) * 8);
         onProgress?.(Math.min(92, progress));
-
-        if (shouldStopEarly) {
-          onProgress?.(92);
-          break;
-        }
-      }
-      if (shouldStopEarly) {
-        break;
       }
     }
-
-    for (const value of seen.values()) {
-      candidates.push(value);
-    }
-
-    candidates.sort((a, b) => b.confidence - a.confidence);
-    return candidates;
-  } finally {
-    await worker.terminate();
   }
+
+  onProgress?.(92);
+  for (const value of seen.values()) {
+    candidates.push(value);
+  }
+  candidates.sort((a, b) => b.confidence - a.confidence);
+  return candidates;
 }
 
 export default function RegisterPage({ error, values }: RegisterPageProps) {
@@ -912,6 +956,7 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
       setScanPreviewUrl("");
       setScanMessage("Menyiapkan kamera...");
       setScanError("");
+      void warmupOcrWorker();
 
       const bindStream = async (stream: MediaStream) => {
         if (!videoRef.current) return false;
@@ -1099,7 +1144,9 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
       setScanProgress((prev) => Math.max(prev, 93));
       const weightedCandidates = ocrCandidates.map((item) => ({
         data: parseKtpText(item.text),
-        weight: Math.max(1, Math.round(item.confidence / 14)),
+        weight:
+          Math.max(1, Math.round(item.confidence / 16)) +
+          (item.source === "text-focus" ? 2 : item.source === "enhanced" ? 1 : 0),
       }));
       const combinedParse = parseKtpText(ocrCandidates.map((item) => item.text).join("\n"));
       const extracted = mergeParsedKtpResults([...weightedCandidates, { data: combinedParse, weight: 3 }]);

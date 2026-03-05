@@ -153,6 +153,26 @@ function redirectTo(res: NextApiResponse, path: string, params?: Record<string, 
   res.status(303).setHeader("Location", location).end();
 }
 
+function resolveRegisterErrorMessage(reason: string) {
+  const text = reason.toLowerCase();
+  if (
+    text.includes("can't reach database server") ||
+    text.includes("tenant or user not found") ||
+    text.includes("authentication failed") ||
+    text.includes("p1000") ||
+    text.includes("p1001") ||
+    text.includes("p1017")
+  ) {
+    return "Database belum terhubung. Cek environment deployment: DATABASE_URL, DIRECT_URL, dan password Supabase.";
+  }
+
+  if (text.includes("unique constraint")) {
+    return "Data sudah terdaftar. Cek kembali email atau NIK.";
+  }
+
+  return "Pendaftaran gagal diproses. Silakan coba lagi.";
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -189,6 +209,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    await prisma.$queryRaw`SELECT 1`;
+
     const exists = await prisma.user.findFirst({
       where: {
         OR: [{ email: parsed.data.email }, { nik: parsed.data.nik }],
@@ -225,10 +247,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } catch (error) {
     const reason = error instanceof Error ? error.message : "Unknown error";
     redirectTo(res, "/register", {
-      error:
-        process.env.NODE_ENV === "development"
-          ? `Database error: ${reason}`
-          : "Pendaftaran gagal diproses. Pastikan koneksi database aktif.",
+      error: process.env.NODE_ENV === "development" ? `Database error: ${reason}` : resolveRegisterErrorMessage(reason),
     });
   }
 }
