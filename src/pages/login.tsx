@@ -1,7 +1,6 @@
 import Head from "next/head";
 import Link from "next/link";
 import type { GetServerSideProps } from "next";
-import { getRoleHome, getSessionFromToken } from "@/lib/auth";
 import PasswordInput from "@/components/PasswordInput";
 
 type LoginPageProps = {
@@ -11,16 +10,6 @@ type LoginPageProps = {
 };
 
 export const getServerSideProps: GetServerSideProps<LoginPageProps> = async (ctx) => {
-  const existing = await getSessionFromToken(ctx.req.cookies.healtease_session);
-  if (existing) {
-    return {
-      redirect: {
-        destination: getRoleHome(existing.role),
-        permanent: false,
-      },
-    };
-  }
-
   return {
     props: {
       error: typeof ctx.query.error === "string" ? ctx.query.error : null,
