@@ -11,12 +11,21 @@ function withSslMode(url: string) {
   return `${url}${separator}sslmode=require`;
 }
 
-const resolvedDatabaseUrl = (process.env.DATABASE_URL || process.env.DIRECT_URL || "").trim();
+function stripWrappingQuotes(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return trimmed;
+  if ((trimmed.startsWith('"') && trimmed.endsWith('"')) || (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
+    return trimmed.slice(1, -1).trim();
+  }
+  return trimmed;
+}
+
+const resolvedDatabaseUrl = stripWrappingQuotes(process.env.DATABASE_URL || process.env.DIRECT_URL || "");
 if (resolvedDatabaseUrl) {
   process.env.DATABASE_URL = withSslMode(resolvedDatabaseUrl);
 }
 if (process.env.DIRECT_URL) {
-  process.env.DIRECT_URL = withSslMode(process.env.DIRECT_URL.trim());
+  process.env.DIRECT_URL = withSslMode(stripWrappingQuotes(process.env.DIRECT_URL));
 }
 
 export const prisma =

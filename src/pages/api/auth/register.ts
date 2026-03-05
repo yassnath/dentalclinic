@@ -170,6 +170,10 @@ function resolveRegisterErrorMessage(reason: string) {
     return "Data sudah terdaftar. Cek kembali email atau NIK.";
   }
 
+  if (text.includes("patient_identities") || text.includes("relation") || text.includes("table")) {
+    return "Registrasi akun berhasil, tetapi penyimpanan detail KTP belum aktif di deployment. Jalankan sinkronisasi database.";
+  }
+
   return "Pendaftaran gagal diproses. Silakan coba lagi.";
 }
 
@@ -233,24 +237,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const hash = await bcrypt.hash(parsed.data.password, 10);
     const username = await ensureUniqueUsername(parsed.data.name, parsed.data.nik);
 
-    const now = new Date();
-    await prisma.$transaction(async (tx) => {
-      const user = await tx.user.create({
-        data: {
-          name: parsed.data.name,
-          username,
-          email: parsed.data.email,
-          password: hash,
-          role: "pasien",
-          tanggalLahir: new Date(parsed.data.tanggal_lahir),
-          jenisKelamin: parsed.data.jenis_kelamin,
-          nik: parsed.data.nik,
-          alamat: composeAddress(parsed.data),
-        },
-      });
+    const user = await prisma.user.create({
+      data: {
+        name: parsed.data.name,
+        username,
+        email: parsed.data.email,
+        password: hash,
+        role: "pasien",
+        tanggalLahir: new Date(parsed.data.tanggal_lahir),
+        jenisKelamin: parsed.data.jenis_kelamin,
+        nik: parsed.data.nik,
+        alamat: composeAddress(parsed.data),
+      },
+    });
 
-      await tx.patientIdentity.create({
-        data: {
+    const now = new Date();
+    let identitySyncWarning: string | null = null;
+    try {
+      await prisma.patientIdentity.upsert({
+        where: { userId: user.id },
+        create: {
           userId: user.id,
           nik: parsed.data.nik,
           nama: parsed.data.name,
@@ -271,11 +277,34 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           createdAt: now,
           updatedAt: now,
         },
+        update: {
+          nik: parsed.data.nik,
+          nama: parsed.data.name,
+          tempatLahir: parsed.data.tempat_lahir,
+          tanggalLahir: new Date(parsed.data.tanggal_lahir),
+          jenisKelamin: parsed.data.jenis_kelamin,
+          alamat: parsed.data.alamat,
+          rtRw: parsed.data.rt_rw,
+          kelurahanDesa: parsed.data.kelurahan_desa,
+          kecamatan: parsed.data.kecamatan,
+          agama: parsed.data.agama,
+          statusPerkawinan: parsed.data.status_perkawinan,
+          pekerjaan: parsed.data.pekerjaan,
+          kewarganegaraan: parsed.data.kewarganegaraan,
+          berlakuHingga: parsed.data.berlaku_hingga,
+          isVerified: true,
+          verifiedAt: now,
+          updatedAt: now,
+        },
       });
-    });
+    } catch (identityError) {
+      const reason = identityError instanceof Error ? identityError.message : "Identity sync failed";
+      console.error("[register] patient identity sync failed:", reason);
+      identitySyncWarning = "Akun berhasil dibuat, namun detail KTP belum tersimpan penuh.";
+    }
 
     redirectTo(res, "/login", {
-      success: "Registrasi berhasil. Silakan login.",
+      success: identitySyncWarning ? `Registrasi berhasil. ${identitySyncWarning}` : "Registrasi berhasil. Silakan login.",
       email: parsed.data.email,
     });
   } catch (error) {
