@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ThemeToggle from "@/components/ThemeToggle";
 
 type LayoutUser = {
@@ -94,6 +94,8 @@ export default function DashboardLayout({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [language, setLanguage] = useState<"id" | "en">("id");
+  const [sidebarDensity, setSidebarDensity] = useState(0);
+  const sidebarRef = useRef<HTMLElement | null>(null);
   const menus = useMemo(() => getMenus(user, unreadNotifCount, language), [user, unreadNotifCount, language]);
   const currentPath = useMemo(() => router.asPath.split("?")[0], [router.asPath]);
   const roleLabel = useMemo(() => getRoleLabel(user.role), [user.role]);
@@ -135,6 +137,42 @@ export default function DashboardLayout({
     };
   }, [open]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    let cancelled = false;
+    const measureFit = async () => {
+      const isMobile = window.matchMedia("(max-width: 639px)").matches;
+      if (!isMobile) {
+        setSidebarDensity(0);
+        return;
+      }
+
+      const levels = [0, 1, 2, 3];
+      for (const level of levels) {
+        if (cancelled) return;
+        setSidebarDensity(level);
+        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+        const el = sidebarRef.current;
+        if (!el) return;
+        if (el.scrollHeight <= window.innerHeight) {
+          return;
+        }
+      }
+    };
+
+    void measureFit();
+    const onResize = () => {
+      void measureFit();
+    };
+    window.addEventListener("resize", onResize);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("resize", onResize);
+    };
+  }, [open, menus.length, language, user.role]);
+
   return (
     <div className="dashboard-shell min-h-screen bg-app text-body">
       {open ? (
@@ -147,7 +185,8 @@ export default function DashboardLayout({
 
       <div className="min-h-screen sm:flex">
         <aside
-          className={`dashboard-sidebar fixed inset-y-0 left-0 z-50 h-[100dvh] w-72 overflow-hidden transform border-r border-soft bg-surface p-6 shadow-lg transition-transform duration-300 ease-out sm:static sm:h-auto sm:translate-x-0 sm:overflow-visible ${
+          ref={sidebarRef}
+          className={`dashboard-sidebar dashboard-sidebar-density-${sidebarDensity} fixed inset-y-0 left-0 z-50 h-[100dvh] w-72 overflow-hidden transform border-r border-soft bg-surface p-6 shadow-lg transition-transform duration-300 ease-out sm:static sm:h-auto sm:translate-x-0 sm:overflow-visible ${
             open ? "translate-x-0" : "-translate-x-full"
           }`}
         >
