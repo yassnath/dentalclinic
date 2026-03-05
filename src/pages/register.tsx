@@ -121,6 +121,8 @@ type OcrWorkerBundle = {
   worker: Awaited<ReturnType<(typeof import("tesseract.js"))["createWorker"]>>;
 };
 
+type ScanLightStatus = "unknown" | "low" | "adequate" | "ideal";
+
 let sharedOcrWorkerPromise: Promise<OcrWorkerBundle> | null = null;
 
 async function getSharedOcrWorker(): Promise<OcrWorkerBundle> {
@@ -176,7 +178,13 @@ function cleanLine(line: string) {
 }
 
 function normalizeOcrNumeric(raw: string) {
-  return raw.replace(/[Oo]/g, "0").replace(/[Il]/g, "1");
+  return raw
+    .replace(/[OoQqDd]/g, "0")
+    .replace(/[Il|!]/g, "1")
+    .replace(/[Zz]/g, "2")
+    .replace(/[Ss]/g, "5")
+    .replace(/[Gg]/g, "6")
+    .replace(/[Bb]/g, "8");
 }
 
 function normalizeAlphaOcr(raw: string) {
@@ -358,6 +366,41 @@ function decodeNikInfo(nik: string): { tanggal_lahir?: string; jenis_kelamin?: "
   return { tanggal_lahir: iso, jenis_kelamin: gender };
 }
 
+function collectNikCandidates(raw: string) {
+  const normalized = normalizeOcrNumeric(raw);
+  const compact = normalized.replace(/[^\d]/g, "");
+  const candidates = new Set<string>();
+
+  for (const match of normalized.matchAll(/\b\d{16}\b/g)) {
+    candidates.add(match[0]);
+  }
+
+  for (let i = 0; i + 16 <= compact.length; i += 1) {
+    const slice = compact.slice(i, i + 16);
+    if (/^\d{16}$/.test(slice)) candidates.add(slice);
+  }
+
+  return [...candidates];
+}
+
+function scoreNikCandidate(nik: string) {
+  if (!/^\d{16}$/.test(nik)) return -1;
+  let score = 0;
+  if (!/^0+$/.test(nik)) score += 2;
+  if (!/^(\d)\1{5}$/.test(nik.slice(0, 6))) score += 1;
+  const info = decodeNikInfo(nik);
+  if (info.jenis_kelamin) score += 1;
+  if (info.tanggal_lahir) score += 4;
+  return score;
+}
+
+function pickLikelyNik(raw: string) {
+  const candidates = collectNikCandidates(raw);
+  if (!candidates.length) return "";
+  const ranked = candidates.sort((a, b) => scoreNikCandidate(b) - scoreNikCandidate(a));
+  return ranked[0] ?? "";
+}
+
 function parseKtpText(raw: string): Partial<RegisterValues> {
   const lines = raw
     .replace(/\r/g, "\n")
@@ -389,8 +432,8 @@ function parseKtpText(raw: string): Partial<RegisterValues> {
     }
 
     if (label === "nik") {
-      const nik = normalizeOcrNumeric(value).replace(/\D/g, "").slice(0, 16);
-      if (nik.length >= 12) result.nik = nik;
+      const nik = pickLikelyNik(`${line}\n${value}\n${nextLine}`);
+      if (nik) result.nik = nik;
       continue;
     }
 
@@ -437,10 +480,7 @@ function parseKtpText(raw: string): Partial<RegisterValues> {
   const fullText = lines.join("\n");
   const fullTextNormalized = normalizeOcrNumeric(fullText);
   if (!result.nik) {
-    const nikFallback = fullTextNormalized
-      .match(/N[IL1]?K[^\d]{0,10}([0-9]{16})/i)?.[1]
-      ?.replace(/\D/g, "")
-      ?.slice(0, 16);
+    const nikFallback = pickLikelyNik(fullTextNormalized);
     if (nikFallback) result.nik = nikFallback;
   }
   if (!result.nik) {
@@ -543,7 +583,7 @@ function parseKtpText(raw: string): Partial<RegisterValues> {
   const normalizeTextField = (value: string | undefined) => (value ? cleanLine(value) : "");
   return {
     nik: (result.nik ?? "").replace(/\D/g, "").slice(0, 16),
-    name: normalizeFieldForVote("name", result.name ?? ""),
+    name: normalizeFieldForVote("name", (result.name ?? "").replace(/\b(?:PROVINSI|KOTA|KABUPATEN)\b.*$/i, "")),
     tempat_lahir: normalizeFieldForVote("tempat_lahir", result.tempat_lahir ?? ""),
     tanggal_lahir: parseKtpDate(result.tanggal_lahir ?? ""),
     jenis_kelamin: normalizeGender(result.jenis_kelamin ?? ""),
@@ -659,6 +699,22 @@ async function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality = 0
   });
 }
 
+async function rotateCanvasBlob(sourceCanvas: HTMLCanvasElement, angleDeg: number) {
+  const rad = (angleDeg * Math.PI) / 180;
+  const absDeg = Math.abs(angleDeg) % 180;
+  const swapAxis = absDeg === 90;
+  const rotatedCanvas = document.createElement("canvas");
+  rotatedCanvas.width = swapAxis ? sourceCanvas.height : sourceCanvas.width;
+  rotatedCanvas.height = swapAxis ? sourceCanvas.width : sourceCanvas.height;
+  const ctx = rotatedCanvas.getContext("2d");
+  if (!ctx) return canvasToBlob(sourceCanvas, "image/png");
+
+  ctx.translate(rotatedCanvas.width / 2, rotatedCanvas.height / 2);
+  ctx.rotate(rad);
+  ctx.drawImage(sourceCanvas, -sourceCanvas.width / 2, -sourceCanvas.height / 2);
+  return canvasToBlob(rotatedCanvas, "image/png");
+}
+
 async function buildOcrSources(source: Blob): Promise<Array<{ name: string; blob: Blob }>> {
   if (typeof window === "undefined" || typeof createImageBitmap !== "function") {
     return [{ name: "original", blob: source }];
@@ -759,6 +815,8 @@ async function buildOcrSources(source: Blob): Promise<Array<{ name: string; blob
   const lowLightBlob = lowLightCtx ? await canvasToBlob(lowLightCanvas, "image/png") : enhancedBlob;
   const croppedBlob = croppedCtx ? await canvasToBlob(croppedCanvas, "image/png") : enhancedBlob;
   const textFocusBlob = textFocusCtx ? await canvasToBlob(textFocusCanvas, "image/png") : croppedBlob;
+  const rotated90Blob = textFocusCtx ? await rotateCanvasBlob(textFocusCanvas, 90) : textFocusBlob;
+  const rotated270Blob = textFocusCtx ? await rotateCanvasBlob(textFocusCanvas, -90) : textFocusBlob;
 
   return [
     { name: "original", blob: source },
@@ -766,6 +824,8 @@ async function buildOcrSources(source: Blob): Promise<Array<{ name: string; blob
     { name: "text-focus", blob: textFocusBlob },
     { name: "cropped", blob: croppedBlob },
     { name: "low-light", blob: lowLightBlob },
+    { name: "rotated-90", blob: rotated90Blob },
+    { name: "rotated-270", blob: rotated270Blob },
   ];
 }
 
@@ -798,8 +858,9 @@ async function runKtpOcr(source: Blob, onProgress?: (percent: number) => void): 
   const primaryModes = [tesseract.PSM.SINGLE_BLOCK, tesseract.PSM.SPARSE_TEXT];
   const fallbackModes = [tesseract.PSM.AUTO];
   const sources = await buildOcrSources(source);
-  const primarySources = sources.filter((item) => item.name !== "low-light");
-  const fallbackSources = sources.filter((item) => item.name === "low-light");
+  const fallbackSourceNames = new Set(["low-light", "rotated-90", "rotated-270"]);
+  const primarySources = sources.filter((item) => !fallbackSourceNames.has(item.name));
+  const fallbackSources = sources.filter((item) => fallbackSourceNames.has(item.name));
   const seen = new Map<string, OcrCandidate>();
   const candidates: OcrCandidate[] = [];
   let bestFilled = 0;
@@ -892,7 +953,8 @@ async function runKtpOcr(source: Blob, onProgress?: (percent: number) => void): 
         const result = await worker.recognize(item.blob, { rotateAuto: true });
         const text = result.data.text?.trim();
         if (text) {
-          const confidence = Number(result.data.confidence ?? 0) + 2;
+          const sourceBonus = item.name.startsWith("rotated-") ? 3 : 2;
+          const confidence = Number(result.data.confidence ?? 0) + sourceBonus;
           considerCandidate(text, confidence, item.name, String(mode));
         }
 
@@ -922,9 +984,12 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
   const [cameraReady, setCameraReady] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
   const [scanPreviewUrl, setScanPreviewUrl] = useState("");
+  const [lightScore, setLightScore] = useState(0);
+  const [lightStatus, setLightStatus] = useState<ScanLightStatus>("unknown");
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const analysisCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
@@ -954,6 +1019,8 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
       setCameraReady(false);
       setScanProgress(0);
       setScanPreviewUrl("");
+      setLightScore(0);
+      setLightStatus("unknown");
       setScanMessage("Menyiapkan kamera...");
       setScanError("");
       void warmupOcrWorker();
@@ -1068,6 +1135,51 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
     };
   }, [scanOpen]);
 
+  useEffect(() => {
+    if (!scanOpen || !cameraReady) return;
+    if (scanBusy) return;
+
+    const sampleLight = () => {
+      const video = videoRef.current;
+      const canvas = analysisCanvasRef.current;
+      if (!video || !canvas || video.videoWidth <= 0 || video.videoHeight <= 0) return;
+
+      const targetWidth = 220;
+      const targetHeight = Math.max(120, Math.round((video.videoHeight / video.videoWidth) * targetWidth));
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      if (!ctx) return;
+
+      ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
+      const data = ctx.getImageData(0, 0, targetWidth, targetHeight).data;
+      if (!data.length) return;
+
+      let luminanceSum = 0;
+      let sampleCount = 0;
+      for (let i = 0; i < data.length; i += 16) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        luminanceSum += 0.299 * r + 0.587 * g + 0.114 * b;
+        sampleCount += 1;
+      }
+      if (!sampleCount) return;
+
+      const avgLuminance = luminanceSum / sampleCount;
+      const normalized = Math.round(clamp(((avgLuminance - 38) / 172) * 100, 0, 100));
+      const nextStatus: ScanLightStatus = normalized < 36 ? "low" : normalized < 64 ? "adequate" : "ideal";
+      setLightScore(normalized);
+      setLightStatus(nextStatus);
+    };
+
+    sampleLight();
+    const timer = window.setInterval(sampleLight, 360);
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [scanOpen, cameraReady, scanBusy]);
+
   const onFieldChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = event.target;
     setFormValues((prev) => ({ ...prev, [name]: value }));
@@ -1105,6 +1217,10 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
     }
     if (!cameraReady || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || video.videoWidth === 0 || video.videoHeight === 0) {
       setScanError("Kamera belum siap. Tunggu sampai preview muncul jelas.");
+      return;
+    }
+    if (lightStatus === "unknown" || lightStatus === "low") {
+      setScanError("Cahaya masih kurang. Tingkatkan cahaya sampai minimal status Cukup Cahaya.");
       return;
     }
 
@@ -1226,7 +1342,26 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
     setScanError("");
     setScanMessage("");
     setScanPreviewUrl("");
+    setLightScore(0);
+    setLightStatus("unknown");
   };
+
+  const lightStatusLabel =
+    lightStatus === "low"
+      ? "Kekurangan Cahaya"
+      : lightStatus === "adequate"
+        ? "Cukup Cahaya (Minimal)"
+        : lightStatus === "ideal"
+          ? "Cahaya Pas (Rekomendasi)"
+          : "Mendeteksi Cahaya...";
+  const lightStatusHint =
+    lightStatus === "low"
+      ? "Tambah pencahayaan atau dekatkan KTP ke sumber cahaya."
+      : lightStatus === "adequate"
+        ? "Sudah bisa scan, tapi hasil terbaik didapat saat Cahaya Pas."
+        : lightStatus === "ideal"
+          ? "Pencahayaan sudah optimal. Silakan lanjut scan."
+          : "Arahkan KTP dan tunggu indikator stabil.";
 
   return (
     <>
@@ -1461,6 +1596,57 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
               ) : null}
             </div>
             <canvas ref={canvasRef} className="hidden" />
+            <canvas ref={analysisCanvasRef} className="hidden" />
+
+            <div className="mt-3 rounded-xl border border-soft bg-surface-soft px-3 py-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-xs font-semibold text-secondary">Indikator Pencahayaan</p>
+                <span
+                  className={`inline-flex items-center rounded-full px-2 py-1 text-[11px] font-semibold ${
+                    lightStatus === "ideal"
+                      ? "bg-emerald-100 text-emerald-700"
+                      : lightStatus === "adequate"
+                        ? "bg-amber-100 text-amber-700"
+                        : lightStatus === "low"
+                          ? "bg-red-100 text-red-700"
+                          : "bg-slate-100 text-slate-600"
+                  }`}
+                >
+                  {lightStatusLabel}
+                </span>
+              </div>
+              <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200">
+                <div
+                  className={`h-full transition-all ${
+                    lightStatus === "ideal"
+                      ? "bg-emerald-500"
+                      : lightStatus === "adequate"
+                        ? "bg-amber-500"
+                        : lightStatus === "low"
+                          ? "bg-red-500"
+                          : "bg-slate-400"
+                  }`}
+                  style={{ width: `${Math.max(8, lightScore)}%` }}
+                />
+              </div>
+              <p className="mt-2 text-[11px]" style={{ color: "var(--text-70)" }}>
+                {lightStatusHint}
+              </p>
+              <div className="mt-2 grid gap-1 text-[11px]">
+                <p className={`${lightStatus === "low" ? "text-red-600" : "text-secondary"}`}>
+                  {lightStatus === "low" ? "!" : "•"} Kekurangan cahaya
+                </p>
+                <p
+                  className={`${lightStatus === "adequate" || lightStatus === "ideal" ? "text-amber-600" : ""}`}
+                  style={lightStatus === "adequate" || lightStatus === "ideal" ? undefined : { color: "var(--text-70)" }}
+                >
+                  {lightStatus === "adequate" || lightStatus === "ideal" ? "✓" : "•"} Cukup cahaya (minimal bisa scan)
+                </p>
+                <p className={`${lightStatus === "ideal" ? "text-emerald-600" : ""}`} style={lightStatus === "ideal" ? undefined : { color: "var(--text-70)" }}>
+                  {lightStatus === "ideal" ? "✓" : "•"} Cahaya pas (rekomendasi terbaik)
+                </p>
+              </div>
+            </div>
 
             {scanMessage ? (
               <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700">{scanMessage}</div>
@@ -1476,10 +1662,10 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
               <button
                 type="button"
                 onClick={captureAndScan}
-                disabled={scanBusy || !cameraReady}
+                disabled={scanBusy || !cameraReady || lightStatus === "unknown" || lightStatus === "low"}
                 className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-65"
               >
-                {scanBusy ? "Memproses..." : "Scan"}
+                {scanBusy ? "Memproses..." : lightStatus === "unknown" || lightStatus === "low" ? "Atur Cahaya" : "Scan"}
               </button>
             </div>
           </div>

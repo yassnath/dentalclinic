@@ -166,6 +166,10 @@ function resolveRegisterErrorMessage(reason: string) {
     return "Database belum terhubung. Cek environment deployment: DATABASE_URL, DIRECT_URL, dan password Supabase.";
   }
 
+  if (text.includes("prepared statement") || text.includes("cached plan") || text.includes("schema cache")) {
+    return "Koneksi database deployment belum stabil. Coba ulang dalam beberapa detik.";
+  }
+
   if (text.includes("unique constraint")) {
     return "Data sudah terdaftar. Cek kembali email atau NIK.";
   }
@@ -220,8 +224,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    await prisma.$queryRaw`SELECT 1`;
-
     const exists = await prisma.user.findFirst({
       where: {
         OR: [{ email: parsed.data.email }, { nik: parsed.data.nik }],
@@ -236,6 +238,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const hash = await bcrypt.hash(parsed.data.password, 10);
     const username = await ensureUniqueUsername(parsed.data.name, parsed.data.nik);
+    const now = new Date();
 
     const user = await prisma.user.create({
       data: {
@@ -248,10 +251,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         jenisKelamin: parsed.data.jenis_kelamin,
         nik: parsed.data.nik,
         alamat: composeAddress(parsed.data),
+        createdAt: now,
+        updatedAt: now,
       },
     });
 
-    const now = new Date();
     let identitySyncWarning: string | null = null;
     try {
       await prisma.patientIdentity.upsert({
