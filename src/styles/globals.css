@@ -1260,8 +1260,8 @@ table:is(.responsive-table, .theme-table) td {
 .ktp-scan-progress-mask {
   position: absolute;
   inset-block: 0;
-  right: 0;
-  background: linear-gradient(90deg, rgba(3, 8, 20, 0.22) 0%, rgba(3, 8, 20, 0.58) 100%);
+  left: 0;
+  background: linear-gradient(90deg, rgba(2, 6, 18, 0.8) 0%, rgba(2, 6, 18, 0.68) 100%);
   transition: width 0.35s ease;
 }
 

@@ -270,7 +270,7 @@ export default function HomePage() {
                   </Link>
                 </div>
                 <div className="ml-2 flex items-center gap-2">
-                  <Link href="/register" className="rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-blue-700 sm:text-base">
+                  <Link href="/login" className="rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-blue-700 sm:text-base">
                     Konsultasi Sekarang
                   </Link>
                   <ThemeToggle compact className="h-10 w-10 justify-center rounded-xl px-0" />
@@ -307,7 +307,7 @@ export default function HomePage() {
               <Link href="/login" className="block rounded-full px-3 py-2 text-sm font-medium text-primary transition hover:bg-blue-100">
                 Login
               </Link>
-              <Link href="/register" className="mt-2 inline-flex w-full items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700">
+              <Link href="/login" className="mt-2 inline-flex w-full items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700">
                 Konsultasi Sekarang
               </Link>
             </div>
@@ -339,7 +339,7 @@ export default function HomePage() {
               </p>
 
               <div className="mt-8 flex flex-wrap gap-3">
-                <Link href="/register" className="inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-6 py-3 text-base font-semibold text-white shadow-lg shadow-blue-500/20 transition hover:-translate-y-0.5 hover:bg-blue-700">
+                <Link href="/login" className="inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-6 py-3 text-base font-semibold text-white shadow-lg shadow-blue-500/20 transition hover:-translate-y-0.5 hover:bg-blue-700">
                   <i className="fas fa-calendar-check" />
                   Konsultasi Sekarang
                 </Link>
@@ -506,7 +506,7 @@ export default function HomePage() {
               <p className="mx-auto mt-4 max-w-2xl text-white/90">
                 Terapkan alur pendaftaran, antrian, dan rekam medis digital dalam satu sistem yang menyatu.
               </p>
-              <Link href="/register" className="mt-8 inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-3 font-semibold text-blue-700 transition hover:bg-blue-100">
+              <Link href="/login" className="mt-8 inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-3 font-semibold text-blue-700 transition hover:bg-blue-100">
                 <i className="fas fa-arrow-right" />
                 Konsultasi Sekarang
               </Link>

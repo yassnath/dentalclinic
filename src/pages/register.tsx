@@ -896,6 +896,7 @@ async function runKtpOcr(source: Blob, onProgress?: (percent: number) => void): 
           preserve_interword_spaces: "1",
           user_defined_dpi: "300",
           tessedit_char_blacklist: "[]{}<>`~",
+          tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,:;/-()'",
           tessedit_do_invert: "0",
         });
         const result = await worker.recognize(item.blob, { rotateAuto: true });
@@ -1114,13 +1115,11 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
     }
 
     setScanBusy(true);
-    setScanProgress(6);
+    setScanProgress(8);
     setScanError("");
     setScanMessage("Menganalisa KTP");
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 80));
-      setScanProgress(12);
       const width = video.videoWidth || 1280;
       const height = video.videoHeight || 720;
       canvas.width = width;
@@ -1138,7 +1137,7 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
           resolve(file);
         }, "image/jpeg", 0.95);
       });
-      setScanProgress(24);
+      setScanProgress(20);
       const ocrCandidates = await runKtpOcr(blob, (percent) => {
         setScanProgress((prev) => Math.max(prev, percent));
       });
@@ -1149,7 +1148,7 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
       setScanProgress((prev) => Math.max(prev, 93));
       const weightedCandidates = ocrCandidates.map((item) => ({
         data: parseKtpText(item.text),
-        weight: Math.max(1, Math.round(item.confidence / 18)),
+        weight: Math.max(1, Math.round(item.confidence / 14)),
       }));
       const combinedParse = parseKtpText(ocrCandidates.map((item) => item.text).join("\n"));
       const extracted = mergeParsedKtpResults([...weightedCandidates, { data: combinedParse, weight: 3 }]);
@@ -1277,7 +1276,14 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
               </div>
             </aside>
 
-            <form action="/register" method="POST" className="auth-form rounded-3xl border border-soft bg-surface p-5 sm:p-8">
+            <form
+              action="/register"
+              method="POST"
+              className="auth-form rounded-3xl border border-soft bg-surface p-5 sm:p-8"
+              data-confirm="Pastikan semua data sudah benar?"
+              data-confirm-title="Konfirmasi Registrasi"
+              data-confirm-confirm-label="Ya, Register"
+            >
               <div className="mb-4 lg:hidden">
                 <span className="auth-badge">
                   <i className="fas fa-id-card-clip" />
@@ -1429,8 +1435,8 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
             <div className="ktp-scan-video-shell">
               <video ref={videoRef} className="ktp-scan-video" autoPlay muted playsInline />
               {scanBusy ? (
-                <div className="ktp-scan-progress-layer">
-                  <div className="ktp-scan-progress-mask" style={{ width: `${100 - scanProgress}%` }} />
+                  <div className="ktp-scan-progress-layer">
+                  <div className="ktp-scan-progress-mask" style={{ width: `${scanProgress}%` }} />
                   <div className="ktp-scan-progress-track">
                     <div className="ktp-scan-progress-fill" style={{ width: `${scanProgress}%` }} />
                   </div>
