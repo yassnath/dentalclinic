@@ -10,37 +10,67 @@ datasource db {
 }
 
 model User {
-  id                BigInt         @id @default(autoincrement())
-  name              String         @db.VarChar(255)
-  username          String         @unique(map: "users_username_unique") @db.VarChar(255)
-  email             String         @unique(map: "users_email_unique") @db.VarChar(255)
-  emailVerifiedAt   DateTime?      @map("email_verified_at") @db.Timestamp(0)
-  password          String         @db.VarChar(255)
-  role              String         @default("pasien") @db.VarChar(32)
-  spesialis         String?        @db.VarChar(255)
-  alamat            String?        @db.VarChar(255)
-  telepon           String?        @db.VarChar(255)
-  noHp              String?        @map("no_hp") @db.VarChar(255)
-  tanggalLahir      DateTime?      @map("tanggal_lahir") @db.Date
-  jenisKelamin      String?        @map("jenis_kelamin") @db.VarChar(32)
-  nik               String?        @db.VarChar(16)
-  noRm              String?        @unique(map: "users_no_rm_unique") @map("no_rm") @db.VarChar(30)
-  qrToken           String?        @unique(map: "users_qr_token_unique") @map("qr_token") @db.VarChar(255)
-  qrPath            String?        @map("qr_path") @db.VarChar(255)
-  roleId            BigInt?        @map("role_id")
-  rememberToken     String?        @map("remember_token") @db.VarChar(100)
-  createdAt         DateTime?      @map("created_at") @db.Timestamp(0)
-  updatedAt         DateTime?      @map("updated_at") @db.Timestamp(0)
+  id                BigInt           @id @default(autoincrement())
+  name              String           @db.VarChar(255)
+  username          String           @unique(map: "users_username_unique") @db.VarChar(255)
+  email             String           @unique(map: "users_email_unique") @db.VarChar(255)
+  emailVerifiedAt   DateTime?        @map("email_verified_at") @db.Timestamp(0)
+  password          String           @db.VarChar(255)
+  role              String           @default("pasien") @db.VarChar(32)
+  spesialis         String?          @db.VarChar(255)
+  alamat            String?          @db.VarChar(255)
+  telepon           String?          @db.VarChar(255)
+  noHp              String?          @map("no_hp") @db.VarChar(255)
+  tanggalLahir      DateTime?        @map("tanggal_lahir") @db.Date
+  jenisKelamin      String?          @map("jenis_kelamin") @db.VarChar(32)
+  nik               String?          @db.VarChar(16)
+  noRm              String?          @unique(map: "users_no_rm_unique") @map("no_rm") @db.VarChar(30)
+  qrToken           String?          @unique(map: "users_qr_token_unique") @map("qr_token") @db.VarChar(255)
+  qrPath            String?          @map("qr_path") @db.VarChar(255)
+  roleId            BigInt?          @map("role_id")
+  rememberToken     String?          @map("remember_token") @db.VarChar(100)
+  createdAt         DateTime?        @map("created_at") @db.Timestamp(0)
+  updatedAt         DateTime?        @map("updated_at") @db.Timestamp(0)
   jadwalDokter      JadwalDokter[]
-  pendaftarans      Pendaftaran[]  @relation("PendaftaranUser")
-  pendaftarDokter   Pendaftaran[]  @relation("PendaftaranDokter")
-  pendaftarDiterima Pendaftaran[]  @relation("PendaftaranDiterimaDokter")
+  pendaftarans      Pendaftaran[]    @relation("PendaftaranUser")
+  pendaftarDokter   Pendaftaran[]    @relation("PendaftaranDokter")
+  pendaftarDiterima Pendaftaran[]    @relation("PendaftaranDiterimaDokter")
   notifikasis       Notifikasi[]
   pembayarans       Pembayaran[]
-  rekamMedisDokter  RekamMedis[]   @relation("RekamMedisDokter")
-  rekamMedisPasien  RekamMedis[]   @relation("RekamMedisPasien")
+  rekamMedisDokter  RekamMedis[]     @relation("RekamMedisDokter")
+  rekamMedisPasien  RekamMedis[]     @relation("RekamMedisPasien")
+  patientIdentity   PatientIdentity?
 
+  @@index([role, createdAt])
   @@map("users")
+}
+
+model PatientIdentity {
+  id               BigInt    @id @default(autoincrement())
+  userId           BigInt    @unique @map("user_id")
+  nik              String    @db.VarChar(16)
+  nama             String    @db.VarChar(255)
+  tempatLahir      String?   @map("tempat_lahir") @db.VarChar(120)
+  tanggalLahir     DateTime? @map("tanggal_lahir") @db.Date
+  jenisKelamin     String?   @map("jenis_kelamin") @db.VarChar(32)
+  alamat           String?   @db.VarChar(255)
+  rtRw             String?   @map("rt_rw") @db.VarChar(15)
+  kelurahanDesa    String?   @map("kelurahan_desa") @db.VarChar(120)
+  kecamatan        String?   @db.VarChar(120)
+  agama            String?   @db.VarChar(32)
+  statusPerkawinan String?   @map("status_perkawinan") @db.VarChar(64)
+  pekerjaan        String?   @db.VarChar(120)
+  kewarganegaraan  String?   @db.VarChar(8)
+  berlakuHingga    String?   @map("berlaku_hingga") @db.VarChar(32)
+  isVerified       Boolean   @default(false) @map("is_verified")
+  verifiedAt       DateTime? @map("verified_at") @db.Timestamp(0)
+  createdAt        DateTime? @map("created_at") @db.Timestamp(0)
+  updatedAt        DateTime? @map("updated_at") @db.Timestamp(0)
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict)
+
+  @@index([nik])
+  @@index([nama])
+  @@map("patient_identities")
 }
 
 model Pendaftaran {
@@ -77,6 +107,12 @@ model Pendaftaran {
   @@index([userId])
   @@index([dokterId])
   @@index([diterimaOlehDokterId])
+  @@index([status, createdAt])
+  @@index([dokterId, createdAt])
+  @@index([diterimaOlehDokterId, createdAt])
+  @@index([dokterId, tanggalKunjungan, jamKunjungan])
+  @@index([diterimaOlehDokterId, tanggalKunjungan, jamKunjungan])
+  @@index([tanggalKunjungan, jamKunjungan])
   @@map("pendaftarans")
 }
 
@@ -133,6 +169,8 @@ model Pembayaran {
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict)
 
   @@index([userId])
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
   @@map("pembayarans")
 }
 

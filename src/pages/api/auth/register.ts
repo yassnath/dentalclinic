@@ -198,6 +198,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     email: sanitizeInput(pickBodyString(req.body?.email)),
     password: pickBodyString(req.body?.password),
   };
+  const ktpVerified = pickBodyString(req.body?.ktp_verified).trim() === "1";
+  if (!ktpVerified) {
+    redirectTo(res, "/register", {
+      error: "Konfirmasi data KTP wajib dicentang sebelum register.",
+    });
+    return;
+  }
 
   const normalized = normalizeForValidation(submittedValues);
   const parsed = registerSchema.safeParse(normalized);
@@ -226,18 +233,45 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const hash = await bcrypt.hash(parsed.data.password, 10);
     const username = await ensureUniqueUsername(parsed.data.name, parsed.data.nik);
 
-    await prisma.user.create({
-      data: {
-        name: parsed.data.name,
-        username,
-        email: parsed.data.email,
-        password: hash,
-        role: "pasien",
-        tanggalLahir: new Date(parsed.data.tanggal_lahir),
-        jenisKelamin: parsed.data.jenis_kelamin,
-        nik: parsed.data.nik,
-        alamat: composeAddress(parsed.data),
-      },
+    const now = new Date();
+    await prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          name: parsed.data.name,
+          username,
+          email: parsed.data.email,
+          password: hash,
+          role: "pasien",
+          tanggalLahir: new Date(parsed.data.tanggal_lahir),
+          jenisKelamin: parsed.data.jenis_kelamin,
+          nik: parsed.data.nik,
+          alamat: composeAddress(parsed.data),
+        },
+      });
+
+      await tx.patientIdentity.create({
+        data: {
+          userId: user.id,
+          nik: parsed.data.nik,
+          nama: parsed.data.name,
+          tempatLahir: parsed.data.tempat_lahir,
+          tanggalLahir: new Date(parsed.data.tanggal_lahir),
+          jenisKelamin: parsed.data.jenis_kelamin,
+          alamat: parsed.data.alamat,
+          rtRw: parsed.data.rt_rw,
+          kelurahanDesa: parsed.data.kelurahan_desa,
+          kecamatan: parsed.data.kecamatan,
+          agama: parsed.data.agama,
+          statusPerkawinan: parsed.data.status_perkawinan,
+          pekerjaan: parsed.data.pekerjaan,
+          kewarganegaraan: parsed.data.kewarganegaraan,
+          berlakuHingga: parsed.data.berlaku_hingga,
+          isVerified: true,
+          verifiedAt: now,
+          createdAt: now,
+          updatedAt: now,
+        },
+      });
     });
 
     redirectTo(res, "/login", {

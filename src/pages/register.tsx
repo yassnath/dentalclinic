@@ -1401,6 +1401,17 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
                 </div>
               </div>
 
+              <label className="mt-4 flex items-start gap-2 text-sm" style={{ color: "var(--text-70)" }}>
+                <input
+                  type="checkbox"
+                  name="ktp_verified"
+                  value="1"
+                  required
+                  className="mt-0.5 rounded border-soft"
+                />
+                <span>Saya memastikan data hasil scan/isi manual sudah benar dan sesuai KTP asli.</span>
+              </label>
+
               <button type="submit" className="auth-btn mt-6">
                 <i className="fas fa-user-plus" />
                 Register

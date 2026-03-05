@@ -19,6 +19,11 @@ export type PrismaPromise<T> = $Public.PrismaPromise<T>
  */
 export type User = $Result.DefaultSelection<Prisma.$UserPayload>
 /**
+ * Model PatientIdentity
+ * 
+ */
+export type PatientIdentity = $Result.DefaultSelection<Prisma.$PatientIdentityPayload>
+/**
  * Model Pendaftaran
  * 
  */
@@ -171,6 +176,16 @@ export class PrismaClient<
     * ```
     */
   get user(): Prisma.UserDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.patientIdentity`: Exposes CRUD operations for the **PatientIdentity** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more PatientIdentities
+    * const patientIdentities = await prisma.patientIdentity.findMany()
+    * ```
+    */
+  get patientIdentity(): Prisma.PatientIdentityDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.pendaftaran`: Exposes CRUD operations for the **Pendaftaran** model.
@@ -663,6 +678,7 @@ export namespace Prisma {
 
   export const ModelName: {
     User: 'User',
+    PatientIdentity: 'PatientIdentity',
     Pendaftaran: 'Pendaftaran',
     RekamMedis: 'RekamMedis',
     JadwalDokter: 'JadwalDokter',
@@ -686,7 +702,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "user" | "pendaftaran" | "rekamMedis" | "jadwalDokter" | "pembayaran" | "notifikasi"
+      modelProps: "user" | "patientIdentity" | "pendaftaran" | "rekamMedis" | "jadwalDokter" | "pembayaran" | "notifikasi"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -761,6 +777,80 @@ export namespace Prisma {
           count: {
             args: Prisma.UserCountArgs<ExtArgs>
             result: $Utils.Optional<UserCountAggregateOutputType> | number
+          }
+        }
+      }
+      PatientIdentity: {
+        payload: Prisma.$PatientIdentityPayload<ExtArgs>
+        fields: Prisma.PatientIdentityFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.PatientIdentityFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PatientIdentityPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.PatientIdentityFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PatientIdentityPayload>
+          }
+          findFirst: {
+            args: Prisma.PatientIdentityFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PatientIdentityPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.PatientIdentityFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PatientIdentityPayload>
+          }
+          findMany: {
+            args: Prisma.PatientIdentityFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PatientIdentityPayload>[]
+          }
+          create: {
+            args: Prisma.PatientIdentityCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PatientIdentityPayload>
+          }
+          createMany: {
+            args: Prisma.PatientIdentityCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.PatientIdentityCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PatientIdentityPayload>[]
+          }
+          delete: {
+            args: Prisma.PatientIdentityDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PatientIdentityPayload>
+          }
+          update: {
+            args: Prisma.PatientIdentityUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PatientIdentityPayload>
+          }
+          deleteMany: {
+            args: Prisma.PatientIdentityDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.PatientIdentityUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.PatientIdentityUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PatientIdentityPayload>[]
+          }
+          upsert: {
+            args: Prisma.PatientIdentityUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PatientIdentityPayload>
+          }
+          aggregate: {
+            args: Prisma.PatientIdentityAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregatePatientIdentity>
+          }
+          groupBy: {
+            args: Prisma.PatientIdentityGroupByArgs<ExtArgs>
+            result: $Utils.Optional<PatientIdentityGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.PatientIdentityCountArgs<ExtArgs>
+            result: $Utils.Optional<PatientIdentityCountAggregateOutputType> | number
           }
         }
       }
@@ -1231,6 +1321,7 @@ export namespace Prisma {
   }
   export type GlobalOmitConfig = {
     user?: UserOmit
+    patientIdentity?: PatientIdentityOmit
     pendaftaran?: PendaftaranOmit
     rekamMedis?: RekamMedisOmit
     jadwalDokter?: JadwalDokterOmit
@@ -1778,6 +1869,7 @@ export namespace Prisma {
     pembayarans?: boolean | User$pembayaransArgs<ExtArgs>
     rekamMedisDokter?: boolean | User$rekamMedisDokterArgs<ExtArgs>
     rekamMedisPasien?: boolean | User$rekamMedisPasienArgs<ExtArgs>
+    patientIdentity?: boolean | User$patientIdentityArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["user"]>
 
@@ -1863,6 +1955,7 @@ export namespace Prisma {
     pembayarans?: boolean | User$pembayaransArgs<ExtArgs>
     rekamMedisDokter?: boolean | User$rekamMedisDokterArgs<ExtArgs>
     rekamMedisPasien?: boolean | User$rekamMedisPasienArgs<ExtArgs>
+    patientIdentity?: boolean | User$patientIdentityArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type UserIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
@@ -1879,6 +1972,7 @@ export namespace Prisma {
       pembayarans: Prisma.$PembayaranPayload<ExtArgs>[]
       rekamMedisDokter: Prisma.$RekamMedisPayload<ExtArgs>[]
       rekamMedisPasien: Prisma.$RekamMedisPayload<ExtArgs>[]
+      patientIdentity: Prisma.$PatientIdentityPayload<ExtArgs> | null
     }
     scalars: $Extensions.GetPayloadResult<{
       id: bigint
@@ -2304,6 +2398,7 @@ export namespace Prisma {
     pembayarans<T extends User$pembayaransArgs<ExtArgs> = {}>(args?: Subset<T, User$pembayaransArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PembayaranPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     rekamMedisDokter<T extends User$rekamMedisDokterArgs<ExtArgs> = {}>(args?: Subset<T, User$rekamMedisDokterArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RekamMedisPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     rekamMedisPasien<T extends User$rekamMedisPasienArgs<ExtArgs> = {}>(args?: Subset<T, User$rekamMedisPasienArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RekamMedisPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    patientIdentity<T extends User$patientIdentityArgs<ExtArgs> = {}>(args?: Subset<T, User$patientIdentityArgs<ExtArgs>>): Prisma__PatientIdentityClient<$Result.GetResult<Prisma.$PatientIdentityPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2934,6 +3029,25 @@ export namespace Prisma {
   }
 
   /**
+   * User.patientIdentity
+   */
+  export type User$patientIdentityArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PatientIdentity
+     */
+    select?: PatientIdentitySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PatientIdentity
+     */
+    omit?: PatientIdentityOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PatientIdentityInclude<ExtArgs> | null
+    where?: PatientIdentityWhereInput
+  }
+
+  /**
    * User without action
    */
   export type UserDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -2949,6 +3063,1297 @@ export namespace Prisma {
      * Choose, which related nodes to fetch as well
      */
     include?: UserInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model PatientIdentity
+   */
+
+  export type AggregatePatientIdentity = {
+    _count: PatientIdentityCountAggregateOutputType | null
+    _avg: PatientIdentityAvgAggregateOutputType | null
+    _sum: PatientIdentitySumAggregateOutputType | null
+    _min: PatientIdentityMinAggregateOutputType | null
+    _max: PatientIdentityMaxAggregateOutputType | null
+  }
+
+  export type PatientIdentityAvgAggregateOutputType = {
+    id: number | null
+    userId: number | null
+  }
+
+  export type PatientIdentitySumAggregateOutputType = {
+    id: bigint | null
+    userId: bigint | null
+  }
+
+  export type PatientIdentityMinAggregateOutputType = {
+    id: bigint | null
+    userId: bigint | null
+    nik: string | null
+    nama: string | null
+    tempatLahir: string | null
+    tanggalLahir: Date | null
+    jenisKelamin: string | null
+    alamat: string | null
+    rtRw: string | null
+    kelurahanDesa: string | null
+    kecamatan: string | null
+    agama: string | null
+    statusPerkawinan: string | null
+    pekerjaan: string | null
+    kewarganegaraan: string | null
+    berlakuHingga: string | null
+    isVerified: boolean | null
+    verifiedAt: Date | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type PatientIdentityMaxAggregateOutputType = {
+    id: bigint | null
+    userId: bigint | null
+    nik: string | null
+    nama: string | null
+    tempatLahir: string | null
+    tanggalLahir: Date | null
+    jenisKelamin: string | null
+    alamat: string | null
+    rtRw: string | null
+    kelurahanDesa: string | null
+    kecamatan: string | null
+    agama: string | null
+    statusPerkawinan: string | null
+    pekerjaan: string | null
+    kewarganegaraan: string | null
+    berlakuHingga: string | null
+    isVerified: boolean | null
+    verifiedAt: Date | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type PatientIdentityCountAggregateOutputType = {
+    id: number
+    userId: number
+    nik: number
+    nama: number
+    tempatLahir: number
+    tanggalLahir: number
+    jenisKelamin: number
+    alamat: number
+    rtRw: number
+    kelurahanDesa: number
+    kecamatan: number
+    agama: number
+    statusPerkawinan: number
+    pekerjaan: number
+    kewarganegaraan: number
+    berlakuHingga: number
+    isVerified: number
+    verifiedAt: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type PatientIdentityAvgAggregateInputType = {
+    id?: true
+    userId?: true
+  }
+
+  export type PatientIdentitySumAggregateInputType = {
+    id?: true
+    userId?: true
+  }
+
+  export type PatientIdentityMinAggregateInputType = {
+    id?: true
+    userId?: true
+    nik?: true
+    nama?: true
+    tempatLahir?: true
+    tanggalLahir?: true
+    jenisKelamin?: true
+    alamat?: true
+    rtRw?: true
+    kelurahanDesa?: true
+    kecamatan?: true
+    agama?: true
+    statusPerkawinan?: true
+    pekerjaan?: true
+    kewarganegaraan?: true
+    berlakuHingga?: true
+    isVerified?: true
+    verifiedAt?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type PatientIdentityMaxAggregateInputType = {
+    id?: true
+    userId?: true
+    nik?: true
+    nama?: true
+    tempatLahir?: true
+    tanggalLahir?: true
+    jenisKelamin?: true
+    alamat?: true
+    rtRw?: true
+    kelurahanDesa?: true
+    kecamatan?: true
+    agama?: true
+    statusPerkawinan?: true
+    pekerjaan?: true
+    kewarganegaraan?: true
+    berlakuHingga?: true
+    isVerified?: true
+    verifiedAt?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type PatientIdentityCountAggregateInputType = {
+    id?: true
+    userId?: true
+    nik?: true
+    nama?: true
+    tempatLahir?: true
+    tanggalLahir?: true
+    jenisKelamin?: true
+    alamat?: true
+    rtRw?: true
+    kelurahanDesa?: true
+    kecamatan?: true
+    agama?: true
+    statusPerkawinan?: true
+    pekerjaan?: true
+    kewarganegaraan?: true
+    berlakuHingga?: true
+    isVerified?: true
+    verifiedAt?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type PatientIdentityAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PatientIdentity to aggregate.
+     */
+    where?: PatientIdentityWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PatientIdentities to fetch.
+     */
+    orderBy?: PatientIdentityOrderByWithRelationInput | PatientIdentityOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: PatientIdentityWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PatientIdentities from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PatientIdentities.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned PatientIdentities
+    **/
+    _count?: true | PatientIdentityCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: PatientIdentityAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: PatientIdentitySumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: PatientIdentityMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: PatientIdentityMaxAggregateInputType
+  }
+
+  export type GetPatientIdentityAggregateType<T extends PatientIdentityAggregateArgs> = {
+        [P in keyof T & keyof AggregatePatientIdentity]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregatePatientIdentity[P]>
+      : GetScalarType<T[P], AggregatePatientIdentity[P]>
+  }
+
+
+
+
+  export type PatientIdentityGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PatientIdentityWhereInput
+    orderBy?: PatientIdentityOrderByWithAggregationInput | PatientIdentityOrderByWithAggregationInput[]
+    by: PatientIdentityScalarFieldEnum[] | PatientIdentityScalarFieldEnum
+    having?: PatientIdentityScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: PatientIdentityCountAggregateInputType | true
+    _avg?: PatientIdentityAvgAggregateInputType
+    _sum?: PatientIdentitySumAggregateInputType
+    _min?: PatientIdentityMinAggregateInputType
+    _max?: PatientIdentityMaxAggregateInputType
+  }
+
+  export type PatientIdentityGroupByOutputType = {
+    id: bigint
+    userId: bigint
+    nik: string
+    nama: string
+    tempatLahir: string | null
+    tanggalLahir: Date | null
+    jenisKelamin: string | null
+    alamat: string | null
+    rtRw: string | null
+    kelurahanDesa: string | null
+    kecamatan: string | null
+    agama: string | null
+    statusPerkawinan: string | null
+    pekerjaan: string | null
+    kewarganegaraan: string | null
+    berlakuHingga: string | null
+    isVerified: boolean
+    verifiedAt: Date | null
+    createdAt: Date | null
+    updatedAt: Date | null
+    _count: PatientIdentityCountAggregateOutputType | null
+    _avg: PatientIdentityAvgAggregateOutputType | null
+    _sum: PatientIdentitySumAggregateOutputType | null
+    _min: PatientIdentityMinAggregateOutputType | null
+    _max: PatientIdentityMaxAggregateOutputType | null
+  }
+
+  type GetPatientIdentityGroupByPayload<T extends PatientIdentityGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<PatientIdentityGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof PatientIdentityGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], PatientIdentityGroupByOutputType[P]>
+            : GetScalarType<T[P], PatientIdentityGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type PatientIdentitySelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    nik?: boolean
+    nama?: boolean
+    tempatLahir?: boolean
+    tanggalLahir?: boolean
+    jenisKelamin?: boolean
+    alamat?: boolean
+    rtRw?: boolean
+    kelurahanDesa?: boolean
+    kecamatan?: boolean
+    agama?: boolean
+    statusPerkawinan?: boolean
+    pekerjaan?: boolean
+    kewarganegaraan?: boolean
+    berlakuHingga?: boolean
+    isVerified?: boolean
+    verifiedAt?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["patientIdentity"]>
+
+  export type PatientIdentitySelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    nik?: boolean
+    nama?: boolean
+    tempatLahir?: boolean
+    tanggalLahir?: boolean
+    jenisKelamin?: boolean
+    alamat?: boolean
+    rtRw?: boolean
+    kelurahanDesa?: boolean
+    kecamatan?: boolean
+    agama?: boolean
+    statusPerkawinan?: boolean
+    pekerjaan?: boolean
+    kewarganegaraan?: boolean
+    berlakuHingga?: boolean
+    isVerified?: boolean
+    verifiedAt?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["patientIdentity"]>
+
+  export type PatientIdentitySelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    nik?: boolean
+    nama?: boolean
+    tempatLahir?: boolean
+    tanggalLahir?: boolean
+    jenisKelamin?: boolean
+    alamat?: boolean
+    rtRw?: boolean
+    kelurahanDesa?: boolean
+    kecamatan?: boolean
+    agama?: boolean
+    statusPerkawinan?: boolean
+    pekerjaan?: boolean
+    kewarganegaraan?: boolean
+    berlakuHingga?: boolean
+    isVerified?: boolean
+    verifiedAt?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["patientIdentity"]>
+
+  export type PatientIdentitySelectScalar = {
+    id?: boolean
+    userId?: boolean
+    nik?: boolean
+    nama?: boolean
+    tempatLahir?: boolean
+    tanggalLahir?: boolean
+    jenisKelamin?: boolean
+    alamat?: boolean
+    rtRw?: boolean
+    kelurahanDesa?: boolean
+    kecamatan?: boolean
+    agama?: boolean
+    statusPerkawinan?: boolean
+    pekerjaan?: boolean
+    kewarganegaraan?: boolean
+    berlakuHingga?: boolean
+    isVerified?: boolean
+    verifiedAt?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+  export type PatientIdentityOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "nik" | "nama" | "tempatLahir" | "tanggalLahir" | "jenisKelamin" | "alamat" | "rtRw" | "kelurahanDesa" | "kecamatan" | "agama" | "statusPerkawinan" | "pekerjaan" | "kewarganegaraan" | "berlakuHingga" | "isVerified" | "verifiedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["patientIdentity"]>
+  export type PatientIdentityInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type PatientIdentityIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type PatientIdentityIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }
+
+  export type $PatientIdentityPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "PatientIdentity"
+    objects: {
+      user: Prisma.$UserPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: bigint
+      userId: bigint
+      nik: string
+      nama: string
+      tempatLahir: string | null
+      tanggalLahir: Date | null
+      jenisKelamin: string | null
+      alamat: string | null
+      rtRw: string | null
+      kelurahanDesa: string | null
+      kecamatan: string | null
+      agama: string | null
+      statusPerkawinan: string | null
+      pekerjaan: string | null
+      kewarganegaraan: string | null
+      berlakuHingga: string | null
+      isVerified: boolean
+      verifiedAt: Date | null
+      createdAt: Date | null
+      updatedAt: Date | null
+    }, ExtArgs["result"]["patientIdentity"]>
+    composites: {}
+  }
+
+  type PatientIdentityGetPayload<S extends boolean | null | undefined | PatientIdentityDefaultArgs> = $Result.GetResult<Prisma.$PatientIdentityPayload, S>
+
+  type PatientIdentityCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<PatientIdentityFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: PatientIdentityCountAggregateInputType | true
+    }
+
+  export interface PatientIdentityDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['PatientIdentity'], meta: { name: 'PatientIdentity' } }
+    /**
+     * Find zero or one PatientIdentity that matches the filter.
+     * @param {PatientIdentityFindUniqueArgs} args - Arguments to find a PatientIdentity
+     * @example
+     * // Get one PatientIdentity
+     * const patientIdentity = await prisma.patientIdentity.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends PatientIdentityFindUniqueArgs>(args: SelectSubset<T, PatientIdentityFindUniqueArgs<ExtArgs>>): Prisma__PatientIdentityClient<$Result.GetResult<Prisma.$PatientIdentityPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one PatientIdentity that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {PatientIdentityFindUniqueOrThrowArgs} args - Arguments to find a PatientIdentity
+     * @example
+     * // Get one PatientIdentity
+     * const patientIdentity = await prisma.patientIdentity.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends PatientIdentityFindUniqueOrThrowArgs>(args: SelectSubset<T, PatientIdentityFindUniqueOrThrowArgs<ExtArgs>>): Prisma__PatientIdentityClient<$Result.GetResult<Prisma.$PatientIdentityPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PatientIdentity that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PatientIdentityFindFirstArgs} args - Arguments to find a PatientIdentity
+     * @example
+     * // Get one PatientIdentity
+     * const patientIdentity = await prisma.patientIdentity.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends PatientIdentityFindFirstArgs>(args?: SelectSubset<T, PatientIdentityFindFirstArgs<ExtArgs>>): Prisma__PatientIdentityClient<$Result.GetResult<Prisma.$PatientIdentityPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PatientIdentity that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PatientIdentityFindFirstOrThrowArgs} args - Arguments to find a PatientIdentity
+     * @example
+     * // Get one PatientIdentity
+     * const patientIdentity = await prisma.patientIdentity.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends PatientIdentityFindFirstOrThrowArgs>(args?: SelectSubset<T, PatientIdentityFindFirstOrThrowArgs<ExtArgs>>): Prisma__PatientIdentityClient<$Result.GetResult<Prisma.$PatientIdentityPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more PatientIdentities that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PatientIdentityFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all PatientIdentities
+     * const patientIdentities = await prisma.patientIdentity.findMany()
+     * 
+     * // Get first 10 PatientIdentities
+     * const patientIdentities = await prisma.patientIdentity.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const patientIdentityWithIdOnly = await prisma.patientIdentity.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends PatientIdentityFindManyArgs>(args?: SelectSubset<T, PatientIdentityFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PatientIdentityPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a PatientIdentity.
+     * @param {PatientIdentityCreateArgs} args - Arguments to create a PatientIdentity.
+     * @example
+     * // Create one PatientIdentity
+     * const PatientIdentity = await prisma.patientIdentity.create({
+     *   data: {
+     *     // ... data to create a PatientIdentity
+     *   }
+     * })
+     * 
+     */
+    create<T extends PatientIdentityCreateArgs>(args: SelectSubset<T, PatientIdentityCreateArgs<ExtArgs>>): Prisma__PatientIdentityClient<$Result.GetResult<Prisma.$PatientIdentityPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many PatientIdentities.
+     * @param {PatientIdentityCreateManyArgs} args - Arguments to create many PatientIdentities.
+     * @example
+     * // Create many PatientIdentities
+     * const patientIdentity = await prisma.patientIdentity.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends PatientIdentityCreateManyArgs>(args?: SelectSubset<T, PatientIdentityCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many PatientIdentities and returns the data saved in the database.
+     * @param {PatientIdentityCreateManyAndReturnArgs} args - Arguments to create many PatientIdentities.
+     * @example
+     * // Create many PatientIdentities
+     * const patientIdentity = await prisma.patientIdentity.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many PatientIdentities and only return the `id`
+     * const patientIdentityWithIdOnly = await prisma.patientIdentity.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends PatientIdentityCreateManyAndReturnArgs>(args?: SelectSubset<T, PatientIdentityCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PatientIdentityPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a PatientIdentity.
+     * @param {PatientIdentityDeleteArgs} args - Arguments to delete one PatientIdentity.
+     * @example
+     * // Delete one PatientIdentity
+     * const PatientIdentity = await prisma.patientIdentity.delete({
+     *   where: {
+     *     // ... filter to delete one PatientIdentity
+     *   }
+     * })
+     * 
+     */
+    delete<T extends PatientIdentityDeleteArgs>(args: SelectSubset<T, PatientIdentityDeleteArgs<ExtArgs>>): Prisma__PatientIdentityClient<$Result.GetResult<Prisma.$PatientIdentityPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one PatientIdentity.
+     * @param {PatientIdentityUpdateArgs} args - Arguments to update one PatientIdentity.
+     * @example
+     * // Update one PatientIdentity
+     * const patientIdentity = await prisma.patientIdentity.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends PatientIdentityUpdateArgs>(args: SelectSubset<T, PatientIdentityUpdateArgs<ExtArgs>>): Prisma__PatientIdentityClient<$Result.GetResult<Prisma.$PatientIdentityPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more PatientIdentities.
+     * @param {PatientIdentityDeleteManyArgs} args - Arguments to filter PatientIdentities to delete.
+     * @example
+     * // Delete a few PatientIdentities
+     * const { count } = await prisma.patientIdentity.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends PatientIdentityDeleteManyArgs>(args?: SelectSubset<T, PatientIdentityDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PatientIdentities.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PatientIdentityUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many PatientIdentities
+     * const patientIdentity = await prisma.patientIdentity.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends PatientIdentityUpdateManyArgs>(args: SelectSubset<T, PatientIdentityUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PatientIdentities and returns the data updated in the database.
+     * @param {PatientIdentityUpdateManyAndReturnArgs} args - Arguments to update many PatientIdentities.
+     * @example
+     * // Update many PatientIdentities
+     * const patientIdentity = await prisma.patientIdentity.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more PatientIdentities and only return the `id`
+     * const patientIdentityWithIdOnly = await prisma.patientIdentity.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends PatientIdentityUpdateManyAndReturnArgs>(args: SelectSubset<T, PatientIdentityUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PatientIdentityPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one PatientIdentity.
+     * @param {PatientIdentityUpsertArgs} args - Arguments to update or create a PatientIdentity.
+     * @example
+     * // Update or create a PatientIdentity
+     * const patientIdentity = await prisma.patientIdentity.upsert({
+     *   create: {
+     *     // ... data to create a PatientIdentity
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the PatientIdentity we want to update
+     *   }
+     * })
+     */
+    upsert<T extends PatientIdentityUpsertArgs>(args: SelectSubset<T, PatientIdentityUpsertArgs<ExtArgs>>): Prisma__PatientIdentityClient<$Result.GetResult<Prisma.$PatientIdentityPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of PatientIdentities.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PatientIdentityCountArgs} args - Arguments to filter PatientIdentities to count.
+     * @example
+     * // Count the number of PatientIdentities
+     * const count = await prisma.patientIdentity.count({
+     *   where: {
+     *     // ... the filter for the PatientIdentities we want to count
+     *   }
+     * })
+    **/
+    count<T extends PatientIdentityCountArgs>(
+      args?: Subset<T, PatientIdentityCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], PatientIdentityCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a PatientIdentity.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PatientIdentityAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends PatientIdentityAggregateArgs>(args: Subset<T, PatientIdentityAggregateArgs>): Prisma.PrismaPromise<GetPatientIdentityAggregateType<T>>
+
+    /**
+     * Group by PatientIdentity.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PatientIdentityGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends PatientIdentityGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: PatientIdentityGroupByArgs['orderBy'] }
+        : { orderBy?: PatientIdentityGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, PatientIdentityGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetPatientIdentityGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the PatientIdentity model
+   */
+  readonly fields: PatientIdentityFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for PatientIdentity.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__PatientIdentityClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    user<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the PatientIdentity model
+   */
+  interface PatientIdentityFieldRefs {
+    readonly id: FieldRef<"PatientIdentity", 'BigInt'>
+    readonly userId: FieldRef<"PatientIdentity", 'BigInt'>
+    readonly nik: FieldRef<"PatientIdentity", 'String'>
+    readonly nama: FieldRef<"PatientIdentity", 'String'>
+    readonly tempatLahir: FieldRef<"PatientIdentity", 'String'>
+    readonly tanggalLahir: FieldRef<"PatientIdentity", 'DateTime'>
+    readonly jenisKelamin: FieldRef<"PatientIdentity", 'String'>
+    readonly alamat: FieldRef<"PatientIdentity", 'String'>
+    readonly rtRw: FieldRef<"PatientIdentity", 'String'>
+    readonly kelurahanDesa: FieldRef<"PatientIdentity", 'String'>
+    readonly kecamatan: FieldRef<"PatientIdentity", 'String'>
+    readonly agama: FieldRef<"PatientIdentity", 'String'>
+    readonly statusPerkawinan: FieldRef<"PatientIdentity", 'String'>
+    readonly pekerjaan: FieldRef<"PatientIdentity", 'String'>
+    readonly kewarganegaraan: FieldRef<"PatientIdentity", 'String'>
+    readonly berlakuHingga: FieldRef<"PatientIdentity", 'String'>
+    readonly isVerified: FieldRef<"PatientIdentity", 'Boolean'>
+    readonly verifiedAt: FieldRef<"PatientIdentity", 'DateTime'>
+    readonly createdAt: FieldRef<"PatientIdentity", 'DateTime'>
+    readonly updatedAt: FieldRef<"PatientIdentity", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * PatientIdentity findUnique
+   */
+  export type PatientIdentityFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PatientIdentity
+     */
+    select?: PatientIdentitySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PatientIdentity
+     */
+    omit?: PatientIdentityOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PatientIdentityInclude<ExtArgs> | null
+    /**
+     * Filter, which PatientIdentity to fetch.
+     */
+    where: PatientIdentityWhereUniqueInput
+  }
+
+  /**
+   * PatientIdentity findUniqueOrThrow
+   */
+  export type PatientIdentityFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PatientIdentity
+     */
+    select?: PatientIdentitySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PatientIdentity
+     */
+    omit?: PatientIdentityOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PatientIdentityInclude<ExtArgs> | null
+    /**
+     * Filter, which PatientIdentity to fetch.
+     */
+    where: PatientIdentityWhereUniqueInput
+  }
+
+  /**
+   * PatientIdentity findFirst
+   */
+  export type PatientIdentityFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PatientIdentity
+     */
+    select?: PatientIdentitySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PatientIdentity
+     */
+    omit?: PatientIdentityOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PatientIdentityInclude<ExtArgs> | null
+    /**
+     * Filter, which PatientIdentity to fetch.
+     */
+    where?: PatientIdentityWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PatientIdentities to fetch.
+     */
+    orderBy?: PatientIdentityOrderByWithRelationInput | PatientIdentityOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PatientIdentities.
+     */
+    cursor?: PatientIdentityWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PatientIdentities from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PatientIdentities.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PatientIdentities.
+     */
+    distinct?: PatientIdentityScalarFieldEnum | PatientIdentityScalarFieldEnum[]
+  }
+
+  /**
+   * PatientIdentity findFirstOrThrow
+   */
+  export type PatientIdentityFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PatientIdentity
+     */
+    select?: PatientIdentitySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PatientIdentity
+     */
+    omit?: PatientIdentityOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PatientIdentityInclude<ExtArgs> | null
+    /**
+     * Filter, which PatientIdentity to fetch.
+     */
+    where?: PatientIdentityWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PatientIdentities to fetch.
+     */
+    orderBy?: PatientIdentityOrderByWithRelationInput | PatientIdentityOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PatientIdentities.
+     */
+    cursor?: PatientIdentityWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PatientIdentities from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PatientIdentities.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PatientIdentities.
+     */
+    distinct?: PatientIdentityScalarFieldEnum | PatientIdentityScalarFieldEnum[]
+  }
+
+  /**
+   * PatientIdentity findMany
+   */
+  export type PatientIdentityFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PatientIdentity
+     */
+    select?: PatientIdentitySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PatientIdentity
+     */
+    omit?: PatientIdentityOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PatientIdentityInclude<ExtArgs> | null
+    /**
+     * Filter, which PatientIdentities to fetch.
+     */
+    where?: PatientIdentityWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PatientIdentities to fetch.
+     */
+    orderBy?: PatientIdentityOrderByWithRelationInput | PatientIdentityOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing PatientIdentities.
+     */
+    cursor?: PatientIdentityWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PatientIdentities from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PatientIdentities.
+     */
+    skip?: number
+    distinct?: PatientIdentityScalarFieldEnum | PatientIdentityScalarFieldEnum[]
+  }
+
+  /**
+   * PatientIdentity create
+   */
+  export type PatientIdentityCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PatientIdentity
+     */
+    select?: PatientIdentitySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PatientIdentity
+     */
+    omit?: PatientIdentityOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PatientIdentityInclude<ExtArgs> | null
+    /**
+     * The data needed to create a PatientIdentity.
+     */
+    data: XOR<PatientIdentityCreateInput, PatientIdentityUncheckedCreateInput>
+  }
+
+  /**
+   * PatientIdentity createMany
+   */
+  export type PatientIdentityCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many PatientIdentities.
+     */
+    data: PatientIdentityCreateManyInput | PatientIdentityCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * PatientIdentity createManyAndReturn
+   */
+  export type PatientIdentityCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PatientIdentity
+     */
+    select?: PatientIdentitySelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the PatientIdentity
+     */
+    omit?: PatientIdentityOmit<ExtArgs> | null
+    /**
+     * The data used to create many PatientIdentities.
+     */
+    data: PatientIdentityCreateManyInput | PatientIdentityCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PatientIdentityIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * PatientIdentity update
+   */
+  export type PatientIdentityUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PatientIdentity
+     */
+    select?: PatientIdentitySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PatientIdentity
+     */
+    omit?: PatientIdentityOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PatientIdentityInclude<ExtArgs> | null
+    /**
+     * The data needed to update a PatientIdentity.
+     */
+    data: XOR<PatientIdentityUpdateInput, PatientIdentityUncheckedUpdateInput>
+    /**
+     * Choose, which PatientIdentity to update.
+     */
+    where: PatientIdentityWhereUniqueInput
+  }
+
+  /**
+   * PatientIdentity updateMany
+   */
+  export type PatientIdentityUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update PatientIdentities.
+     */
+    data: XOR<PatientIdentityUpdateManyMutationInput, PatientIdentityUncheckedUpdateManyInput>
+    /**
+     * Filter which PatientIdentities to update
+     */
+    where?: PatientIdentityWhereInput
+    /**
+     * Limit how many PatientIdentities to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * PatientIdentity updateManyAndReturn
+   */
+  export type PatientIdentityUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PatientIdentity
+     */
+    select?: PatientIdentitySelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the PatientIdentity
+     */
+    omit?: PatientIdentityOmit<ExtArgs> | null
+    /**
+     * The data used to update PatientIdentities.
+     */
+    data: XOR<PatientIdentityUpdateManyMutationInput, PatientIdentityUncheckedUpdateManyInput>
+    /**
+     * Filter which PatientIdentities to update
+     */
+    where?: PatientIdentityWhereInput
+    /**
+     * Limit how many PatientIdentities to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PatientIdentityIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * PatientIdentity upsert
+   */
+  export type PatientIdentityUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PatientIdentity
+     */
+    select?: PatientIdentitySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PatientIdentity
+     */
+    omit?: PatientIdentityOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PatientIdentityInclude<ExtArgs> | null
+    /**
+     * The filter to search for the PatientIdentity to update in case it exists.
+     */
+    where: PatientIdentityWhereUniqueInput
+    /**
+     * In case the PatientIdentity found by the `where` argument doesn't exist, create a new PatientIdentity with this data.
+     */
+    create: XOR<PatientIdentityCreateInput, PatientIdentityUncheckedCreateInput>
+    /**
+     * In case the PatientIdentity was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<PatientIdentityUpdateInput, PatientIdentityUncheckedUpdateInput>
+  }
+
+  /**
+   * PatientIdentity delete
+   */
+  export type PatientIdentityDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PatientIdentity
+     */
+    select?: PatientIdentitySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PatientIdentity
+     */
+    omit?: PatientIdentityOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PatientIdentityInclude<ExtArgs> | null
+    /**
+     * Filter which PatientIdentity to delete.
+     */
+    where: PatientIdentityWhereUniqueInput
+  }
+
+  /**
+   * PatientIdentity deleteMany
+   */
+  export type PatientIdentityDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PatientIdentities to delete
+     */
+    where?: PatientIdentityWhereInput
+    /**
+     * Limit how many PatientIdentities to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * PatientIdentity without action
+   */
+  export type PatientIdentityDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PatientIdentity
+     */
+    select?: PatientIdentitySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PatientIdentity
+     */
+    omit?: PatientIdentityOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PatientIdentityInclude<ExtArgs> | null
   }
 
 
@@ -9139,6 +10544,32 @@ export namespace Prisma {
   export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
 
 
+  export const PatientIdentityScalarFieldEnum: {
+    id: 'id',
+    userId: 'userId',
+    nik: 'nik',
+    nama: 'nama',
+    tempatLahir: 'tempatLahir',
+    tanggalLahir: 'tanggalLahir',
+    jenisKelamin: 'jenisKelamin',
+    alamat: 'alamat',
+    rtRw: 'rtRw',
+    kelurahanDesa: 'kelurahanDesa',
+    kecamatan: 'kecamatan',
+    agama: 'agama',
+    statusPerkawinan: 'statusPerkawinan',
+    pekerjaan: 'pekerjaan',
+    kewarganegaraan: 'kewarganegaraan',
+    berlakuHingga: 'berlakuHingga',
+    isVerified: 'isVerified',
+    verifiedAt: 'verifiedAt',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type PatientIdentityScalarFieldEnum = (typeof PatientIdentityScalarFieldEnum)[keyof typeof PatientIdentityScalarFieldEnum]
+
+
   export const PendaftaranScalarFieldEnum: {
     id: 'id',
     userId: 'userId',
@@ -9305,6 +10736,13 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'Boolean'
+   */
+  export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
+    
+
+
+  /**
    * Reference to a field of type 'Int'
    */
   export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
@@ -9329,13 +10767,6 @@ export namespace Prisma {
    * Reference to a field of type 'Decimal[]'
    */
   export type ListDecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal[]'>
-    
-
-
-  /**
-   * Reference to a field of type 'Boolean'
-   */
-  export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
     
 
 
@@ -9389,6 +10820,7 @@ export namespace Prisma {
     pembayarans?: PembayaranListRelationFilter
     rekamMedisDokter?: RekamMedisListRelationFilter
     rekamMedisPasien?: RekamMedisListRelationFilter
+    patientIdentity?: XOR<PatientIdentityNullableScalarRelationFilter, PatientIdentityWhereInput> | null
   }
 
   export type UserOrderByWithRelationInput = {
@@ -9421,6 +10853,7 @@ export namespace Prisma {
     pembayarans?: PembayaranOrderByRelationAggregateInput
     rekamMedisDokter?: RekamMedisOrderByRelationAggregateInput
     rekamMedisPasien?: RekamMedisOrderByRelationAggregateInput
+    patientIdentity?: PatientIdentityOrderByWithRelationInput
   }
 
   export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -9456,6 +10889,7 @@ export namespace Prisma {
     pembayarans?: PembayaranListRelationFilter
     rekamMedisDokter?: RekamMedisListRelationFilter
     rekamMedisPasien?: RekamMedisListRelationFilter
+    patientIdentity?: XOR<PatientIdentityNullableScalarRelationFilter, PatientIdentityWhereInput> | null
   }, "id" | "username" | "email" | "noRm" | "qrToken">
 
   export type UserOrderByWithAggregationInput = {
@@ -9512,6 +10946,138 @@ export namespace Prisma {
     rememberToken?: StringNullableWithAggregatesFilter<"User"> | string | null
     createdAt?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
     updatedAt?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
+  }
+
+  export type PatientIdentityWhereInput = {
+    AND?: PatientIdentityWhereInput | PatientIdentityWhereInput[]
+    OR?: PatientIdentityWhereInput[]
+    NOT?: PatientIdentityWhereInput | PatientIdentityWhereInput[]
+    id?: BigIntFilter<"PatientIdentity"> | bigint | number
+    userId?: BigIntFilter<"PatientIdentity"> | bigint | number
+    nik?: StringFilter<"PatientIdentity"> | string
+    nama?: StringFilter<"PatientIdentity"> | string
+    tempatLahir?: StringNullableFilter<"PatientIdentity"> | string | null
+    tanggalLahir?: DateTimeNullableFilter<"PatientIdentity"> | Date | string | null
+    jenisKelamin?: StringNullableFilter<"PatientIdentity"> | string | null
+    alamat?: StringNullableFilter<"PatientIdentity"> | string | null
+    rtRw?: StringNullableFilter<"PatientIdentity"> | string | null
+    kelurahanDesa?: StringNullableFilter<"PatientIdentity"> | string | null
+    kecamatan?: StringNullableFilter<"PatientIdentity"> | string | null
+    agama?: StringNullableFilter<"PatientIdentity"> | string | null
+    statusPerkawinan?: StringNullableFilter<"PatientIdentity"> | string | null
+    pekerjaan?: StringNullableFilter<"PatientIdentity"> | string | null
+    kewarganegaraan?: StringNullableFilter<"PatientIdentity"> | string | null
+    berlakuHingga?: StringNullableFilter<"PatientIdentity"> | string | null
+    isVerified?: BoolFilter<"PatientIdentity"> | boolean
+    verifiedAt?: DateTimeNullableFilter<"PatientIdentity"> | Date | string | null
+    createdAt?: DateTimeNullableFilter<"PatientIdentity"> | Date | string | null
+    updatedAt?: DateTimeNullableFilter<"PatientIdentity"> | Date | string | null
+    user?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }
+
+  export type PatientIdentityOrderByWithRelationInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    nik?: SortOrder
+    nama?: SortOrder
+    tempatLahir?: SortOrderInput | SortOrder
+    tanggalLahir?: SortOrderInput | SortOrder
+    jenisKelamin?: SortOrderInput | SortOrder
+    alamat?: SortOrderInput | SortOrder
+    rtRw?: SortOrderInput | SortOrder
+    kelurahanDesa?: SortOrderInput | SortOrder
+    kecamatan?: SortOrderInput | SortOrder
+    agama?: SortOrderInput | SortOrder
+    statusPerkawinan?: SortOrderInput | SortOrder
+    pekerjaan?: SortOrderInput | SortOrder
+    kewarganegaraan?: SortOrderInput | SortOrder
+    berlakuHingga?: SortOrderInput | SortOrder
+    isVerified?: SortOrder
+    verifiedAt?: SortOrderInput | SortOrder
+    createdAt?: SortOrderInput | SortOrder
+    updatedAt?: SortOrderInput | SortOrder
+    user?: UserOrderByWithRelationInput
+  }
+
+  export type PatientIdentityWhereUniqueInput = Prisma.AtLeast<{
+    id?: bigint | number
+    userId?: bigint | number
+    AND?: PatientIdentityWhereInput | PatientIdentityWhereInput[]
+    OR?: PatientIdentityWhereInput[]
+    NOT?: PatientIdentityWhereInput | PatientIdentityWhereInput[]
+    nik?: StringFilter<"PatientIdentity"> | string
+    nama?: StringFilter<"PatientIdentity"> | string
+    tempatLahir?: StringNullableFilter<"PatientIdentity"> | string | null
+    tanggalLahir?: DateTimeNullableFilter<"PatientIdentity"> | Date | string | null
+    jenisKelamin?: StringNullableFilter<"PatientIdentity"> | string | null
+    alamat?: StringNullableFilter<"PatientIdentity"> | string | null
+    rtRw?: StringNullableFilter<"PatientIdentity"> | string | null
+    kelurahanDesa?: StringNullableFilter<"PatientIdentity"> | string | null
+    kecamatan?: StringNullableFilter<"PatientIdentity"> | string | null
+    agama?: StringNullableFilter<"PatientIdentity"> | string | null
+    statusPerkawinan?: StringNullableFilter<"PatientIdentity"> | string | null
+    pekerjaan?: StringNullableFilter<"PatientIdentity"> | string | null
+    kewarganegaraan?: StringNullableFilter<"PatientIdentity"> | string | null
+    berlakuHingga?: StringNullableFilter<"PatientIdentity"> | string | null
+    isVerified?: BoolFilter<"PatientIdentity"> | boolean
+    verifiedAt?: DateTimeNullableFilter<"PatientIdentity"> | Date | string | null
+    createdAt?: DateTimeNullableFilter<"PatientIdentity"> | Date | string | null
+    updatedAt?: DateTimeNullableFilter<"PatientIdentity"> | Date | string | null
+    user?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }, "id" | "userId">
+
+  export type PatientIdentityOrderByWithAggregationInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    nik?: SortOrder
+    nama?: SortOrder
+    tempatLahir?: SortOrderInput | SortOrder
+    tanggalLahir?: SortOrderInput | SortOrder
+    jenisKelamin?: SortOrderInput | SortOrder
+    alamat?: SortOrderInput | SortOrder
+    rtRw?: SortOrderInput | SortOrder
+    kelurahanDesa?: SortOrderInput | SortOrder
+    kecamatan?: SortOrderInput | SortOrder
+    agama?: SortOrderInput | SortOrder
+    statusPerkawinan?: SortOrderInput | SortOrder
+    pekerjaan?: SortOrderInput | SortOrder
+    kewarganegaraan?: SortOrderInput | SortOrder
+    berlakuHingga?: SortOrderInput | SortOrder
+    isVerified?: SortOrder
+    verifiedAt?: SortOrderInput | SortOrder
+    createdAt?: SortOrderInput | SortOrder
+    updatedAt?: SortOrderInput | SortOrder
+    _count?: PatientIdentityCountOrderByAggregateInput
+    _avg?: PatientIdentityAvgOrderByAggregateInput
+    _max?: PatientIdentityMaxOrderByAggregateInput
+    _min?: PatientIdentityMinOrderByAggregateInput
+    _sum?: PatientIdentitySumOrderByAggregateInput
+  }
+
+  export type PatientIdentityScalarWhereWithAggregatesInput = {
+    AND?: PatientIdentityScalarWhereWithAggregatesInput | PatientIdentityScalarWhereWithAggregatesInput[]
+    OR?: PatientIdentityScalarWhereWithAggregatesInput[]
+    NOT?: PatientIdentityScalarWhereWithAggregatesInput | PatientIdentityScalarWhereWithAggregatesInput[]
+    id?: BigIntWithAggregatesFilter<"PatientIdentity"> | bigint | number
+    userId?: BigIntWithAggregatesFilter<"PatientIdentity"> | bigint | number
+    nik?: StringWithAggregatesFilter<"PatientIdentity"> | string
+    nama?: StringWithAggregatesFilter<"PatientIdentity"> | string
+    tempatLahir?: StringNullableWithAggregatesFilter<"PatientIdentity"> | string | null
+    tanggalLahir?: DateTimeNullableWithAggregatesFilter<"PatientIdentity"> | Date | string | null
+    jenisKelamin?: StringNullableWithAggregatesFilter<"PatientIdentity"> | string | null
+    alamat?: StringNullableWithAggregatesFilter<"PatientIdentity"> | string | null
+    rtRw?: StringNullableWithAggregatesFilter<"PatientIdentity"> | string | null
+    kelurahanDesa?: StringNullableWithAggregatesFilter<"PatientIdentity"> | string | null
+    kecamatan?: StringNullableWithAggregatesFilter<"PatientIdentity"> | string | null
+    agama?: StringNullableWithAggregatesFilter<"PatientIdentity"> | string | null
+    statusPerkawinan?: StringNullableWithAggregatesFilter<"PatientIdentity"> | string | null
+    pekerjaan?: StringNullableWithAggregatesFilter<"PatientIdentity"> | string | null
+    kewarganegaraan?: StringNullableWithAggregatesFilter<"PatientIdentity"> | string | null
+    berlakuHingga?: StringNullableWithAggregatesFilter<"PatientIdentity"> | string | null
+    isVerified?: BoolWithAggregatesFilter<"PatientIdentity"> | boolean
+    verifiedAt?: DateTimeNullableWithAggregatesFilter<"PatientIdentity"> | Date | string | null
+    createdAt?: DateTimeNullableWithAggregatesFilter<"PatientIdentity"> | Date | string | null
+    updatedAt?: DateTimeNullableWithAggregatesFilter<"PatientIdentity"> | Date | string | null
   }
 
   export type PendaftaranWhereInput = {
@@ -10039,6 +11605,7 @@ export namespace Prisma {
     pembayarans?: PembayaranCreateNestedManyWithoutUserInput
     rekamMedisDokter?: RekamMedisCreateNestedManyWithoutDokterInput
     rekamMedisPasien?: RekamMedisCreateNestedManyWithoutPasienInput
+    patientIdentity?: PatientIdentityCreateNestedOneWithoutUserInput
   }
 
   export type UserUncheckedCreateInput = {
@@ -10071,6 +11638,7 @@ export namespace Prisma {
     pembayarans?: PembayaranUncheckedCreateNestedManyWithoutUserInput
     rekamMedisDokter?: RekamMedisUncheckedCreateNestedManyWithoutDokterInput
     rekamMedisPasien?: RekamMedisUncheckedCreateNestedManyWithoutPasienInput
+    patientIdentity?: PatientIdentityUncheckedCreateNestedOneWithoutUserInput
   }
 
   export type UserUpdateInput = {
@@ -10103,6 +11671,7 @@ export namespace Prisma {
     pembayarans?: PembayaranUpdateManyWithoutUserNestedInput
     rekamMedisDokter?: RekamMedisUpdateManyWithoutDokterNestedInput
     rekamMedisPasien?: RekamMedisUpdateManyWithoutPasienNestedInput
+    patientIdentity?: PatientIdentityUpdateOneWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateInput = {
@@ -10135,6 +11704,7 @@ export namespace Prisma {
     pembayarans?: PembayaranUncheckedUpdateManyWithoutUserNestedInput
     rekamMedisDokter?: RekamMedisUncheckedUpdateManyWithoutDokterNestedInput
     rekamMedisPasien?: RekamMedisUncheckedUpdateManyWithoutPasienNestedInput
+    patientIdentity?: PatientIdentityUncheckedUpdateOneWithoutUserNestedInput
   }
 
   export type UserCreateManyInput = {
@@ -10205,6 +11775,166 @@ export namespace Prisma {
     qrPath?: NullableStringFieldUpdateOperationsInput | string | null
     roleId?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
     rememberToken?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type PatientIdentityCreateInput = {
+    id?: bigint | number
+    nik: string
+    nama: string
+    tempatLahir?: string | null
+    tanggalLahir?: Date | string | null
+    jenisKelamin?: string | null
+    alamat?: string | null
+    rtRw?: string | null
+    kelurahanDesa?: string | null
+    kecamatan?: string | null
+    agama?: string | null
+    statusPerkawinan?: string | null
+    pekerjaan?: string | null
+    kewarganegaraan?: string | null
+    berlakuHingga?: string | null
+    isVerified?: boolean
+    verifiedAt?: Date | string | null
+    createdAt?: Date | string | null
+    updatedAt?: Date | string | null
+    user: UserCreateNestedOneWithoutPatientIdentityInput
+  }
+
+  export type PatientIdentityUncheckedCreateInput = {
+    id?: bigint | number
+    userId: bigint | number
+    nik: string
+    nama: string
+    tempatLahir?: string | null
+    tanggalLahir?: Date | string | null
+    jenisKelamin?: string | null
+    alamat?: string | null
+    rtRw?: string | null
+    kelurahanDesa?: string | null
+    kecamatan?: string | null
+    agama?: string | null
+    statusPerkawinan?: string | null
+    pekerjaan?: string | null
+    kewarganegaraan?: string | null
+    berlakuHingga?: string | null
+    isVerified?: boolean
+    verifiedAt?: Date | string | null
+    createdAt?: Date | string | null
+    updatedAt?: Date | string | null
+  }
+
+  export type PatientIdentityUpdateInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    nik?: StringFieldUpdateOperationsInput | string
+    nama?: StringFieldUpdateOperationsInput | string
+    tempatLahir?: NullableStringFieldUpdateOperationsInput | string | null
+    tanggalLahir?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    jenisKelamin?: NullableStringFieldUpdateOperationsInput | string | null
+    alamat?: NullableStringFieldUpdateOperationsInput | string | null
+    rtRw?: NullableStringFieldUpdateOperationsInput | string | null
+    kelurahanDesa?: NullableStringFieldUpdateOperationsInput | string | null
+    kecamatan?: NullableStringFieldUpdateOperationsInput | string | null
+    agama?: NullableStringFieldUpdateOperationsInput | string | null
+    statusPerkawinan?: NullableStringFieldUpdateOperationsInput | string | null
+    pekerjaan?: NullableStringFieldUpdateOperationsInput | string | null
+    kewarganegaraan?: NullableStringFieldUpdateOperationsInput | string | null
+    berlakuHingga?: NullableStringFieldUpdateOperationsInput | string | null
+    isVerified?: BoolFieldUpdateOperationsInput | boolean
+    verifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    user?: UserUpdateOneRequiredWithoutPatientIdentityNestedInput
+  }
+
+  export type PatientIdentityUncheckedUpdateInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    userId?: BigIntFieldUpdateOperationsInput | bigint | number
+    nik?: StringFieldUpdateOperationsInput | string
+    nama?: StringFieldUpdateOperationsInput | string
+    tempatLahir?: NullableStringFieldUpdateOperationsInput | string | null
+    tanggalLahir?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    jenisKelamin?: NullableStringFieldUpdateOperationsInput | string | null
+    alamat?: NullableStringFieldUpdateOperationsInput | string | null
+    rtRw?: NullableStringFieldUpdateOperationsInput | string | null
+    kelurahanDesa?: NullableStringFieldUpdateOperationsInput | string | null
+    kecamatan?: NullableStringFieldUpdateOperationsInput | string | null
+    agama?: NullableStringFieldUpdateOperationsInput | string | null
+    statusPerkawinan?: NullableStringFieldUpdateOperationsInput | string | null
+    pekerjaan?: NullableStringFieldUpdateOperationsInput | string | null
+    kewarganegaraan?: NullableStringFieldUpdateOperationsInput | string | null
+    berlakuHingga?: NullableStringFieldUpdateOperationsInput | string | null
+    isVerified?: BoolFieldUpdateOperationsInput | boolean
+    verifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type PatientIdentityCreateManyInput = {
+    id?: bigint | number
+    userId: bigint | number
+    nik: string
+    nama: string
+    tempatLahir?: string | null
+    tanggalLahir?: Date | string | null
+    jenisKelamin?: string | null
+    alamat?: string | null
+    rtRw?: string | null
+    kelurahanDesa?: string | null
+    kecamatan?: string | null
+    agama?: string | null
+    statusPerkawinan?: string | null
+    pekerjaan?: string | null
+    kewarganegaraan?: string | null
+    berlakuHingga?: string | null
+    isVerified?: boolean
+    verifiedAt?: Date | string | null
+    createdAt?: Date | string | null
+    updatedAt?: Date | string | null
+  }
+
+  export type PatientIdentityUpdateManyMutationInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    nik?: StringFieldUpdateOperationsInput | string
+    nama?: StringFieldUpdateOperationsInput | string
+    tempatLahir?: NullableStringFieldUpdateOperationsInput | string | null
+    tanggalLahir?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    jenisKelamin?: NullableStringFieldUpdateOperationsInput | string | null
+    alamat?: NullableStringFieldUpdateOperationsInput | string | null
+    rtRw?: NullableStringFieldUpdateOperationsInput | string | null
+    kelurahanDesa?: NullableStringFieldUpdateOperationsInput | string | null
+    kecamatan?: NullableStringFieldUpdateOperationsInput | string | null
+    agama?: NullableStringFieldUpdateOperationsInput | string | null
+    statusPerkawinan?: NullableStringFieldUpdateOperationsInput | string | null
+    pekerjaan?: NullableStringFieldUpdateOperationsInput | string | null
+    kewarganegaraan?: NullableStringFieldUpdateOperationsInput | string | null
+    berlakuHingga?: NullableStringFieldUpdateOperationsInput | string | null
+    isVerified?: BoolFieldUpdateOperationsInput | boolean
+    verifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type PatientIdentityUncheckedUpdateManyInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    userId?: BigIntFieldUpdateOperationsInput | bigint | number
+    nik?: StringFieldUpdateOperationsInput | string
+    nama?: StringFieldUpdateOperationsInput | string
+    tempatLahir?: NullableStringFieldUpdateOperationsInput | string | null
+    tanggalLahir?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    jenisKelamin?: NullableStringFieldUpdateOperationsInput | string | null
+    alamat?: NullableStringFieldUpdateOperationsInput | string | null
+    rtRw?: NullableStringFieldUpdateOperationsInput | string | null
+    kelurahanDesa?: NullableStringFieldUpdateOperationsInput | string | null
+    kecamatan?: NullableStringFieldUpdateOperationsInput | string | null
+    agama?: NullableStringFieldUpdateOperationsInput | string | null
+    statusPerkawinan?: NullableStringFieldUpdateOperationsInput | string | null
+    pekerjaan?: NullableStringFieldUpdateOperationsInput | string | null
+    kewarganegaraan?: NullableStringFieldUpdateOperationsInput | string | null
+    berlakuHingga?: NullableStringFieldUpdateOperationsInput | string | null
+    isVerified?: BoolFieldUpdateOperationsInput | boolean
+    verifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     updatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
@@ -10850,6 +12580,11 @@ export namespace Prisma {
     none?: RekamMedisWhereInput
   }
 
+  export type PatientIdentityNullableScalarRelationFilter = {
+    is?: PatientIdentityWhereInput | null
+    isNot?: PatientIdentityWhereInput | null
+  }
+
   export type SortOrderInput = {
     sort: SortOrder
     nulls?: NullsOrder
@@ -11039,6 +12774,103 @@ export namespace Prisma {
     _max?: NestedBigIntNullableFilter<$PrismaModel>
   }
 
+  export type BoolFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolFilter<$PrismaModel> | boolean
+  }
+
+  export type UserScalarRelationFilter = {
+    is?: UserWhereInput
+    isNot?: UserWhereInput
+  }
+
+  export type PatientIdentityCountOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    nik?: SortOrder
+    nama?: SortOrder
+    tempatLahir?: SortOrder
+    tanggalLahir?: SortOrder
+    jenisKelamin?: SortOrder
+    alamat?: SortOrder
+    rtRw?: SortOrder
+    kelurahanDesa?: SortOrder
+    kecamatan?: SortOrder
+    agama?: SortOrder
+    statusPerkawinan?: SortOrder
+    pekerjaan?: SortOrder
+    kewarganegaraan?: SortOrder
+    berlakuHingga?: SortOrder
+    isVerified?: SortOrder
+    verifiedAt?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type PatientIdentityAvgOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+  }
+
+  export type PatientIdentityMaxOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    nik?: SortOrder
+    nama?: SortOrder
+    tempatLahir?: SortOrder
+    tanggalLahir?: SortOrder
+    jenisKelamin?: SortOrder
+    alamat?: SortOrder
+    rtRw?: SortOrder
+    kelurahanDesa?: SortOrder
+    kecamatan?: SortOrder
+    agama?: SortOrder
+    statusPerkawinan?: SortOrder
+    pekerjaan?: SortOrder
+    kewarganegaraan?: SortOrder
+    berlakuHingga?: SortOrder
+    isVerified?: SortOrder
+    verifiedAt?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type PatientIdentityMinOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    nik?: SortOrder
+    nama?: SortOrder
+    tempatLahir?: SortOrder
+    tanggalLahir?: SortOrder
+    jenisKelamin?: SortOrder
+    alamat?: SortOrder
+    rtRw?: SortOrder
+    kelurahanDesa?: SortOrder
+    kecamatan?: SortOrder
+    agama?: SortOrder
+    statusPerkawinan?: SortOrder
+    pekerjaan?: SortOrder
+    kewarganegaraan?: SortOrder
+    berlakuHingga?: SortOrder
+    isVerified?: SortOrder
+    verifiedAt?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type PatientIdentitySumOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+  }
+
+  export type BoolWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedBoolFilter<$PrismaModel>
+    _max?: NestedBoolFilter<$PrismaModel>
+  }
+
   export type DateTimeFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
@@ -11059,11 +12891,6 @@ export namespace Prisma {
     gt?: number | IntFieldRefInput<$PrismaModel>
     gte?: number | IntFieldRefInput<$PrismaModel>
     not?: NestedIntNullableFilter<$PrismaModel> | number | null
-  }
-
-  export type UserScalarRelationFilter = {
-    is?: UserWhereInput
-    isNot?: UserWhereInput
   }
 
   export type UserNullableScalarRelationFilter = {
@@ -11394,11 +13221,6 @@ export namespace Prisma {
     _max?: NestedDecimalFilter<$PrismaModel>
   }
 
-  export type BoolFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolFilter<$PrismaModel> | boolean
-  }
-
   export type NotifikasiCountOrderByAggregateInput = {
     id?: SortOrder
     userId?: SortOrder
@@ -11443,14 +13265,6 @@ export namespace Prisma {
   export type NotifikasiSumOrderByAggregateInput = {
     id?: SortOrder
     userId?: SortOrder
-  }
-
-  export type BoolWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedBoolFilter<$PrismaModel>
-    _max?: NestedBoolFilter<$PrismaModel>
   }
 
   export type JadwalDokterCreateNestedManyWithoutDokterInput = {
@@ -11509,6 +13323,12 @@ export namespace Prisma {
     connect?: RekamMedisWhereUniqueInput | RekamMedisWhereUniqueInput[]
   }
 
+  export type PatientIdentityCreateNestedOneWithoutUserInput = {
+    create?: XOR<PatientIdentityCreateWithoutUserInput, PatientIdentityUncheckedCreateWithoutUserInput>
+    connectOrCreate?: PatientIdentityCreateOrConnectWithoutUserInput
+    connect?: PatientIdentityWhereUniqueInput
+  }
+
   export type JadwalDokterUncheckedCreateNestedManyWithoutDokterInput = {
     create?: XOR<JadwalDokterCreateWithoutDokterInput, JadwalDokterUncheckedCreateWithoutDokterInput> | JadwalDokterCreateWithoutDokterInput[] | JadwalDokterUncheckedCreateWithoutDokterInput[]
     connectOrCreate?: JadwalDokterCreateOrConnectWithoutDokterInput | JadwalDokterCreateOrConnectWithoutDokterInput[]
@@ -11563,6 +13383,12 @@ export namespace Prisma {
     connectOrCreate?: RekamMedisCreateOrConnectWithoutPasienInput | RekamMedisCreateOrConnectWithoutPasienInput[]
     createMany?: RekamMedisCreateManyPasienInputEnvelope
     connect?: RekamMedisWhereUniqueInput | RekamMedisWhereUniqueInput[]
+  }
+
+  export type PatientIdentityUncheckedCreateNestedOneWithoutUserInput = {
+    create?: XOR<PatientIdentityCreateWithoutUserInput, PatientIdentityUncheckedCreateWithoutUserInput>
+    connectOrCreate?: PatientIdentityCreateOrConnectWithoutUserInput
+    connect?: PatientIdentityWhereUniqueInput
   }
 
   export type BigIntFieldUpdateOperationsInput = {
@@ -11705,6 +13531,16 @@ export namespace Prisma {
     deleteMany?: RekamMedisScalarWhereInput | RekamMedisScalarWhereInput[]
   }
 
+  export type PatientIdentityUpdateOneWithoutUserNestedInput = {
+    create?: XOR<PatientIdentityCreateWithoutUserInput, PatientIdentityUncheckedCreateWithoutUserInput>
+    connectOrCreate?: PatientIdentityCreateOrConnectWithoutUserInput
+    upsert?: PatientIdentityUpsertWithoutUserInput
+    disconnect?: PatientIdentityWhereInput | boolean
+    delete?: PatientIdentityWhereInput | boolean
+    connect?: PatientIdentityWhereUniqueInput
+    update?: XOR<XOR<PatientIdentityUpdateToOneWithWhereWithoutUserInput, PatientIdentityUpdateWithoutUserInput>, PatientIdentityUncheckedUpdateWithoutUserInput>
+  }
+
   export type JadwalDokterUncheckedUpdateManyWithoutDokterNestedInput = {
     create?: XOR<JadwalDokterCreateWithoutDokterInput, JadwalDokterUncheckedCreateWithoutDokterInput> | JadwalDokterCreateWithoutDokterInput[] | JadwalDokterUncheckedCreateWithoutDokterInput[]
     connectOrCreate?: JadwalDokterCreateOrConnectWithoutDokterInput | JadwalDokterCreateOrConnectWithoutDokterInput[]
@@ -11815,6 +13651,34 @@ export namespace Prisma {
     update?: RekamMedisUpdateWithWhereUniqueWithoutPasienInput | RekamMedisUpdateWithWhereUniqueWithoutPasienInput[]
     updateMany?: RekamMedisUpdateManyWithWhereWithoutPasienInput | RekamMedisUpdateManyWithWhereWithoutPasienInput[]
     deleteMany?: RekamMedisScalarWhereInput | RekamMedisScalarWhereInput[]
+  }
+
+  export type PatientIdentityUncheckedUpdateOneWithoutUserNestedInput = {
+    create?: XOR<PatientIdentityCreateWithoutUserInput, PatientIdentityUncheckedCreateWithoutUserInput>
+    connectOrCreate?: PatientIdentityCreateOrConnectWithoutUserInput
+    upsert?: PatientIdentityUpsertWithoutUserInput
+    disconnect?: PatientIdentityWhereInput | boolean
+    delete?: PatientIdentityWhereInput | boolean
+    connect?: PatientIdentityWhereUniqueInput
+    update?: XOR<XOR<PatientIdentityUpdateToOneWithWhereWithoutUserInput, PatientIdentityUpdateWithoutUserInput>, PatientIdentityUncheckedUpdateWithoutUserInput>
+  }
+
+  export type UserCreateNestedOneWithoutPatientIdentityInput = {
+    create?: XOR<UserCreateWithoutPatientIdentityInput, UserUncheckedCreateWithoutPatientIdentityInput>
+    connectOrCreate?: UserCreateOrConnectWithoutPatientIdentityInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type BoolFieldUpdateOperationsInput = {
+    set?: boolean
+  }
+
+  export type UserUpdateOneRequiredWithoutPatientIdentityNestedInput = {
+    create?: XOR<UserCreateWithoutPatientIdentityInput, UserUncheckedCreateWithoutPatientIdentityInput>
+    connectOrCreate?: UserCreateOrConnectWithoutPatientIdentityInput
+    upsert?: UserUpsertWithoutPatientIdentityInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutPatientIdentityInput, UserUpdateWithoutPatientIdentityInput>, UserUncheckedUpdateWithoutPatientIdentityInput>
   }
 
   export type UserCreateNestedOneWithoutPendaftaransInput = {
@@ -12001,10 +13865,6 @@ export namespace Prisma {
     create?: XOR<UserCreateWithoutNotifikasisInput, UserUncheckedCreateWithoutNotifikasisInput>
     connectOrCreate?: UserCreateOrConnectWithoutNotifikasisInput
     connect?: UserWhereUniqueInput
-  }
-
-  export type BoolFieldUpdateOperationsInput = {
-    set?: boolean
   }
 
   export type UserUpdateOneRequiredWithoutNotifikasisNestedInput = {
@@ -12200,6 +14060,19 @@ export namespace Prisma {
     not?: NestedFloatNullableFilter<$PrismaModel> | number | null
   }
 
+  export type NestedBoolFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolFilter<$PrismaModel> | boolean
+  }
+
+  export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedBoolFilter<$PrismaModel>
+    _max?: NestedBoolFilter<$PrismaModel>
+  }
+
   export type NestedDateTimeFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
@@ -12266,19 +14139,6 @@ export namespace Prisma {
     _sum?: NestedDecimalFilter<$PrismaModel>
     _min?: NestedDecimalFilter<$PrismaModel>
     _max?: NestedDecimalFilter<$PrismaModel>
-  }
-
-  export type NestedBoolFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolFilter<$PrismaModel> | boolean
-  }
-
-  export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedBoolFilter<$PrismaModel>
-    _max?: NestedBoolFilter<$PrismaModel>
   }
 
   export type JadwalDokterCreateWithoutDokterInput = {
@@ -12655,6 +14515,55 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type PatientIdentityCreateWithoutUserInput = {
+    id?: bigint | number
+    nik: string
+    nama: string
+    tempatLahir?: string | null
+    tanggalLahir?: Date | string | null
+    jenisKelamin?: string | null
+    alamat?: string | null
+    rtRw?: string | null
+    kelurahanDesa?: string | null
+    kecamatan?: string | null
+    agama?: string | null
+    statusPerkawinan?: string | null
+    pekerjaan?: string | null
+    kewarganegaraan?: string | null
+    berlakuHingga?: string | null
+    isVerified?: boolean
+    verifiedAt?: Date | string | null
+    createdAt?: Date | string | null
+    updatedAt?: Date | string | null
+  }
+
+  export type PatientIdentityUncheckedCreateWithoutUserInput = {
+    id?: bigint | number
+    nik: string
+    nama: string
+    tempatLahir?: string | null
+    tanggalLahir?: Date | string | null
+    jenisKelamin?: string | null
+    alamat?: string | null
+    rtRw?: string | null
+    kelurahanDesa?: string | null
+    kecamatan?: string | null
+    agama?: string | null
+    statusPerkawinan?: string | null
+    pekerjaan?: string | null
+    kewarganegaraan?: string | null
+    berlakuHingga?: string | null
+    isVerified?: boolean
+    verifiedAt?: Date | string | null
+    createdAt?: Date | string | null
+    updatedAt?: Date | string | null
+  }
+
+  export type PatientIdentityCreateOrConnectWithoutUserInput = {
+    where: PatientIdentityWhereUniqueInput
+    create: XOR<PatientIdentityCreateWithoutUserInput, PatientIdentityUncheckedCreateWithoutUserInput>
+  }
+
   export type JadwalDokterUpsertWithWhereUniqueWithoutDokterInput = {
     where: JadwalDokterWhereUniqueInput
     update: XOR<JadwalDokterUpdateWithoutDokterInput, JadwalDokterUncheckedUpdateWithoutDokterInput>
@@ -12877,6 +14786,205 @@ export namespace Prisma {
     data: XOR<RekamMedisUpdateManyMutationInput, RekamMedisUncheckedUpdateManyWithoutPasienInput>
   }
 
+  export type PatientIdentityUpsertWithoutUserInput = {
+    update: XOR<PatientIdentityUpdateWithoutUserInput, PatientIdentityUncheckedUpdateWithoutUserInput>
+    create: XOR<PatientIdentityCreateWithoutUserInput, PatientIdentityUncheckedCreateWithoutUserInput>
+    where?: PatientIdentityWhereInput
+  }
+
+  export type PatientIdentityUpdateToOneWithWhereWithoutUserInput = {
+    where?: PatientIdentityWhereInput
+    data: XOR<PatientIdentityUpdateWithoutUserInput, PatientIdentityUncheckedUpdateWithoutUserInput>
+  }
+
+  export type PatientIdentityUpdateWithoutUserInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    nik?: StringFieldUpdateOperationsInput | string
+    nama?: StringFieldUpdateOperationsInput | string
+    tempatLahir?: NullableStringFieldUpdateOperationsInput | string | null
+    tanggalLahir?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    jenisKelamin?: NullableStringFieldUpdateOperationsInput | string | null
+    alamat?: NullableStringFieldUpdateOperationsInput | string | null
+    rtRw?: NullableStringFieldUpdateOperationsInput | string | null
+    kelurahanDesa?: NullableStringFieldUpdateOperationsInput | string | null
+    kecamatan?: NullableStringFieldUpdateOperationsInput | string | null
+    agama?: NullableStringFieldUpdateOperationsInput | string | null
+    statusPerkawinan?: NullableStringFieldUpdateOperationsInput | string | null
+    pekerjaan?: NullableStringFieldUpdateOperationsInput | string | null
+    kewarganegaraan?: NullableStringFieldUpdateOperationsInput | string | null
+    berlakuHingga?: NullableStringFieldUpdateOperationsInput | string | null
+    isVerified?: BoolFieldUpdateOperationsInput | boolean
+    verifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type PatientIdentityUncheckedUpdateWithoutUserInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    nik?: StringFieldUpdateOperationsInput | string
+    nama?: StringFieldUpdateOperationsInput | string
+    tempatLahir?: NullableStringFieldUpdateOperationsInput | string | null
+    tanggalLahir?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    jenisKelamin?: NullableStringFieldUpdateOperationsInput | string | null
+    alamat?: NullableStringFieldUpdateOperationsInput | string | null
+    rtRw?: NullableStringFieldUpdateOperationsInput | string | null
+    kelurahanDesa?: NullableStringFieldUpdateOperationsInput | string | null
+    kecamatan?: NullableStringFieldUpdateOperationsInput | string | null
+    agama?: NullableStringFieldUpdateOperationsInput | string | null
+    statusPerkawinan?: NullableStringFieldUpdateOperationsInput | string | null
+    pekerjaan?: NullableStringFieldUpdateOperationsInput | string | null
+    kewarganegaraan?: NullableStringFieldUpdateOperationsInput | string | null
+    berlakuHingga?: NullableStringFieldUpdateOperationsInput | string | null
+    isVerified?: BoolFieldUpdateOperationsInput | boolean
+    verifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type UserCreateWithoutPatientIdentityInput = {
+    id?: bigint | number
+    name: string
+    username: string
+    email: string
+    emailVerifiedAt?: Date | string | null
+    password: string
+    role?: string
+    spesialis?: string | null
+    alamat?: string | null
+    telepon?: string | null
+    noHp?: string | null
+    tanggalLahir?: Date | string | null
+    jenisKelamin?: string | null
+    nik?: string | null
+    noRm?: string | null
+    qrToken?: string | null
+    qrPath?: string | null
+    roleId?: bigint | number | null
+    rememberToken?: string | null
+    createdAt?: Date | string | null
+    updatedAt?: Date | string | null
+    jadwalDokter?: JadwalDokterCreateNestedManyWithoutDokterInput
+    pendaftarans?: PendaftaranCreateNestedManyWithoutUserInput
+    pendaftarDokter?: PendaftaranCreateNestedManyWithoutDokterInput
+    pendaftarDiterima?: PendaftaranCreateNestedManyWithoutDiterimaOlehDokterInput
+    notifikasis?: NotifikasiCreateNestedManyWithoutUserInput
+    pembayarans?: PembayaranCreateNestedManyWithoutUserInput
+    rekamMedisDokter?: RekamMedisCreateNestedManyWithoutDokterInput
+    rekamMedisPasien?: RekamMedisCreateNestedManyWithoutPasienInput
+  }
+
+  export type UserUncheckedCreateWithoutPatientIdentityInput = {
+    id?: bigint | number
+    name: string
+    username: string
+    email: string
+    emailVerifiedAt?: Date | string | null
+    password: string
+    role?: string
+    spesialis?: string | null
+    alamat?: string | null
+    telepon?: string | null
+    noHp?: string | null
+    tanggalLahir?: Date | string | null
+    jenisKelamin?: string | null
+    nik?: string | null
+    noRm?: string | null
+    qrToken?: string | null
+    qrPath?: string | null
+    roleId?: bigint | number | null
+    rememberToken?: string | null
+    createdAt?: Date | string | null
+    updatedAt?: Date | string | null
+    jadwalDokter?: JadwalDokterUncheckedCreateNestedManyWithoutDokterInput
+    pendaftarans?: PendaftaranUncheckedCreateNestedManyWithoutUserInput
+    pendaftarDokter?: PendaftaranUncheckedCreateNestedManyWithoutDokterInput
+    pendaftarDiterima?: PendaftaranUncheckedCreateNestedManyWithoutDiterimaOlehDokterInput
+    notifikasis?: NotifikasiUncheckedCreateNestedManyWithoutUserInput
+    pembayarans?: PembayaranUncheckedCreateNestedManyWithoutUserInput
+    rekamMedisDokter?: RekamMedisUncheckedCreateNestedManyWithoutDokterInput
+    rekamMedisPasien?: RekamMedisUncheckedCreateNestedManyWithoutPasienInput
+  }
+
+  export type UserCreateOrConnectWithoutPatientIdentityInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutPatientIdentityInput, UserUncheckedCreateWithoutPatientIdentityInput>
+  }
+
+  export type UserUpsertWithoutPatientIdentityInput = {
+    update: XOR<UserUpdateWithoutPatientIdentityInput, UserUncheckedUpdateWithoutPatientIdentityInput>
+    create: XOR<UserCreateWithoutPatientIdentityInput, UserUncheckedCreateWithoutPatientIdentityInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutPatientIdentityInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutPatientIdentityInput, UserUncheckedUpdateWithoutPatientIdentityInput>
+  }
+
+  export type UserUpdateWithoutPatientIdentityInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    name?: StringFieldUpdateOperationsInput | string
+    username?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    password?: StringFieldUpdateOperationsInput | string
+    role?: StringFieldUpdateOperationsInput | string
+    spesialis?: NullableStringFieldUpdateOperationsInput | string | null
+    alamat?: NullableStringFieldUpdateOperationsInput | string | null
+    telepon?: NullableStringFieldUpdateOperationsInput | string | null
+    noHp?: NullableStringFieldUpdateOperationsInput | string | null
+    tanggalLahir?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    jenisKelamin?: NullableStringFieldUpdateOperationsInput | string | null
+    nik?: NullableStringFieldUpdateOperationsInput | string | null
+    noRm?: NullableStringFieldUpdateOperationsInput | string | null
+    qrToken?: NullableStringFieldUpdateOperationsInput | string | null
+    qrPath?: NullableStringFieldUpdateOperationsInput | string | null
+    roleId?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+    rememberToken?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    jadwalDokter?: JadwalDokterUpdateManyWithoutDokterNestedInput
+    pendaftarans?: PendaftaranUpdateManyWithoutUserNestedInput
+    pendaftarDokter?: PendaftaranUpdateManyWithoutDokterNestedInput
+    pendaftarDiterima?: PendaftaranUpdateManyWithoutDiterimaOlehDokterNestedInput
+    notifikasis?: NotifikasiUpdateManyWithoutUserNestedInput
+    pembayarans?: PembayaranUpdateManyWithoutUserNestedInput
+    rekamMedisDokter?: RekamMedisUpdateManyWithoutDokterNestedInput
+    rekamMedisPasien?: RekamMedisUpdateManyWithoutPasienNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutPatientIdentityInput = {
+    id?: BigIntFieldUpdateOperationsInput | bigint | number
+    name?: StringFieldUpdateOperationsInput | string
+    username?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    password?: StringFieldUpdateOperationsInput | string
+    role?: StringFieldUpdateOperationsInput | string
+    spesialis?: NullableStringFieldUpdateOperationsInput | string | null
+    alamat?: NullableStringFieldUpdateOperationsInput | string | null
+    telepon?: NullableStringFieldUpdateOperationsInput | string | null
+    noHp?: NullableStringFieldUpdateOperationsInput | string | null
+    tanggalLahir?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    jenisKelamin?: NullableStringFieldUpdateOperationsInput | string | null
+    nik?: NullableStringFieldUpdateOperationsInput | string | null
+    noRm?: NullableStringFieldUpdateOperationsInput | string | null
+    qrToken?: NullableStringFieldUpdateOperationsInput | string | null
+    qrPath?: NullableStringFieldUpdateOperationsInput | string | null
+    roleId?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+    rememberToken?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    updatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    jadwalDokter?: JadwalDokterUncheckedUpdateManyWithoutDokterNestedInput
+    pendaftarans?: PendaftaranUncheckedUpdateManyWithoutUserNestedInput
+    pendaftarDokter?: PendaftaranUncheckedUpdateManyWithoutDokterNestedInput
+    pendaftarDiterima?: PendaftaranUncheckedUpdateManyWithoutDiterimaOlehDokterNestedInput
+    notifikasis?: NotifikasiUncheckedUpdateManyWithoutUserNestedInput
+    pembayarans?: PembayaranUncheckedUpdateManyWithoutUserNestedInput
+    rekamMedisDokter?: RekamMedisUncheckedUpdateManyWithoutDokterNestedInput
+    rekamMedisPasien?: RekamMedisUncheckedUpdateManyWithoutPasienNestedInput
+  }
+
   export type UserCreateWithoutPendaftaransInput = {
     id?: bigint | number
     name: string
@@ -12906,6 +15014,7 @@ export namespace Prisma {
     pembayarans?: PembayaranCreateNestedManyWithoutUserInput
     rekamMedisDokter?: RekamMedisCreateNestedManyWithoutDokterInput
     rekamMedisPasien?: RekamMedisCreateNestedManyWithoutPasienInput
+    patientIdentity?: PatientIdentityCreateNestedOneWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutPendaftaransInput = {
@@ -12937,6 +15046,7 @@ export namespace Prisma {
     pembayarans?: PembayaranUncheckedCreateNestedManyWithoutUserInput
     rekamMedisDokter?: RekamMedisUncheckedCreateNestedManyWithoutDokterInput
     rekamMedisPasien?: RekamMedisUncheckedCreateNestedManyWithoutPasienInput
+    patientIdentity?: PatientIdentityUncheckedCreateNestedOneWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutPendaftaransInput = {
@@ -12973,6 +15083,7 @@ export namespace Prisma {
     pembayarans?: PembayaranCreateNestedManyWithoutUserInput
     rekamMedisDokter?: RekamMedisCreateNestedManyWithoutDokterInput
     rekamMedisPasien?: RekamMedisCreateNestedManyWithoutPasienInput
+    patientIdentity?: PatientIdentityCreateNestedOneWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutPendaftarDokterInput = {
@@ -13004,6 +15115,7 @@ export namespace Prisma {
     pembayarans?: PembayaranUncheckedCreateNestedManyWithoutUserInput
     rekamMedisDokter?: RekamMedisUncheckedCreateNestedManyWithoutDokterInput
     rekamMedisPasien?: RekamMedisUncheckedCreateNestedManyWithoutPasienInput
+    patientIdentity?: PatientIdentityUncheckedCreateNestedOneWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutPendaftarDokterInput = {
@@ -13040,6 +15152,7 @@ export namespace Prisma {
     pembayarans?: PembayaranCreateNestedManyWithoutUserInput
     rekamMedisDokter?: RekamMedisCreateNestedManyWithoutDokterInput
     rekamMedisPasien?: RekamMedisCreateNestedManyWithoutPasienInput
+    patientIdentity?: PatientIdentityCreateNestedOneWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutPendaftarDiterimaInput = {
@@ -13071,6 +15184,7 @@ export namespace Prisma {
     pembayarans?: PembayaranUncheckedCreateNestedManyWithoutUserInput
     rekamMedisDokter?: RekamMedisUncheckedCreateNestedManyWithoutDokterInput
     rekamMedisPasien?: RekamMedisUncheckedCreateNestedManyWithoutPasienInput
+    patientIdentity?: PatientIdentityUncheckedCreateNestedOneWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutPendaftarDiterimaInput = {
@@ -13160,6 +15274,7 @@ export namespace Prisma {
     pembayarans?: PembayaranUpdateManyWithoutUserNestedInput
     rekamMedisDokter?: RekamMedisUpdateManyWithoutDokterNestedInput
     rekamMedisPasien?: RekamMedisUpdateManyWithoutPasienNestedInput
+    patientIdentity?: PatientIdentityUpdateOneWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutPendaftaransInput = {
@@ -13191,6 +15306,7 @@ export namespace Prisma {
     pembayarans?: PembayaranUncheckedUpdateManyWithoutUserNestedInput
     rekamMedisDokter?: RekamMedisUncheckedUpdateManyWithoutDokterNestedInput
     rekamMedisPasien?: RekamMedisUncheckedUpdateManyWithoutPasienNestedInput
+    patientIdentity?: PatientIdentityUncheckedUpdateOneWithoutUserNestedInput
   }
 
   export type UserUpsertWithoutPendaftarDokterInput = {
@@ -13233,6 +15349,7 @@ export namespace Prisma {
     pembayarans?: PembayaranUpdateManyWithoutUserNestedInput
     rekamMedisDokter?: RekamMedisUpdateManyWithoutDokterNestedInput
     rekamMedisPasien?: RekamMedisUpdateManyWithoutPasienNestedInput
+    patientIdentity?: PatientIdentityUpdateOneWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutPendaftarDokterInput = {
@@ -13264,6 +15381,7 @@ export namespace Prisma {
     pembayarans?: PembayaranUncheckedUpdateManyWithoutUserNestedInput
     rekamMedisDokter?: RekamMedisUncheckedUpdateManyWithoutDokterNestedInput
     rekamMedisPasien?: RekamMedisUncheckedUpdateManyWithoutPasienNestedInput
+    patientIdentity?: PatientIdentityUncheckedUpdateOneWithoutUserNestedInput
   }
 
   export type UserUpsertWithoutPendaftarDiterimaInput = {
@@ -13306,6 +15424,7 @@ export namespace Prisma {
     pembayarans?: PembayaranUpdateManyWithoutUserNestedInput
     rekamMedisDokter?: RekamMedisUpdateManyWithoutDokterNestedInput
     rekamMedisPasien?: RekamMedisUpdateManyWithoutPasienNestedInput
+    patientIdentity?: PatientIdentityUpdateOneWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutPendaftarDiterimaInput = {
@@ -13337,6 +15456,7 @@ export namespace Prisma {
     pembayarans?: PembayaranUncheckedUpdateManyWithoutUserNestedInput
     rekamMedisDokter?: RekamMedisUncheckedUpdateManyWithoutDokterNestedInput
     rekamMedisPasien?: RekamMedisUncheckedUpdateManyWithoutPasienNestedInput
+    patientIdentity?: PatientIdentityUncheckedUpdateOneWithoutUserNestedInput
   }
 
   export type RekamMedisUpsertWithWhereUniqueWithoutPendaftaranInput = {
@@ -13384,6 +15504,7 @@ export namespace Prisma {
     notifikasis?: NotifikasiCreateNestedManyWithoutUserInput
     pembayarans?: PembayaranCreateNestedManyWithoutUserInput
     rekamMedisPasien?: RekamMedisCreateNestedManyWithoutPasienInput
+    patientIdentity?: PatientIdentityCreateNestedOneWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutRekamMedisDokterInput = {
@@ -13415,6 +15536,7 @@ export namespace Prisma {
     notifikasis?: NotifikasiUncheckedCreateNestedManyWithoutUserInput
     pembayarans?: PembayaranUncheckedCreateNestedManyWithoutUserInput
     rekamMedisPasien?: RekamMedisUncheckedCreateNestedManyWithoutPasienInput
+    patientIdentity?: PatientIdentityUncheckedCreateNestedOneWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutRekamMedisDokterInput = {
@@ -13451,6 +15573,7 @@ export namespace Prisma {
     notifikasis?: NotifikasiCreateNestedManyWithoutUserInput
     pembayarans?: PembayaranCreateNestedManyWithoutUserInput
     rekamMedisDokter?: RekamMedisCreateNestedManyWithoutDokterInput
+    patientIdentity?: PatientIdentityCreateNestedOneWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutRekamMedisPasienInput = {
@@ -13482,6 +15605,7 @@ export namespace Prisma {
     notifikasis?: NotifikasiUncheckedCreateNestedManyWithoutUserInput
     pembayarans?: PembayaranUncheckedCreateNestedManyWithoutUserInput
     rekamMedisDokter?: RekamMedisUncheckedCreateNestedManyWithoutDokterInput
+    patientIdentity?: PatientIdentityUncheckedCreateNestedOneWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutRekamMedisPasienInput = {
@@ -13590,6 +15714,7 @@ export namespace Prisma {
     notifikasis?: NotifikasiUpdateManyWithoutUserNestedInput
     pembayarans?: PembayaranUpdateManyWithoutUserNestedInput
     rekamMedisPasien?: RekamMedisUpdateManyWithoutPasienNestedInput
+    patientIdentity?: PatientIdentityUpdateOneWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutRekamMedisDokterInput = {
@@ -13621,6 +15746,7 @@ export namespace Prisma {
     notifikasis?: NotifikasiUncheckedUpdateManyWithoutUserNestedInput
     pembayarans?: PembayaranUncheckedUpdateManyWithoutUserNestedInput
     rekamMedisPasien?: RekamMedisUncheckedUpdateManyWithoutPasienNestedInput
+    patientIdentity?: PatientIdentityUncheckedUpdateOneWithoutUserNestedInput
   }
 
   export type UserUpsertWithoutRekamMedisPasienInput = {
@@ -13663,6 +15789,7 @@ export namespace Prisma {
     notifikasis?: NotifikasiUpdateManyWithoutUserNestedInput
     pembayarans?: PembayaranUpdateManyWithoutUserNestedInput
     rekamMedisDokter?: RekamMedisUpdateManyWithoutDokterNestedInput
+    patientIdentity?: PatientIdentityUpdateOneWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutRekamMedisPasienInput = {
@@ -13694,6 +15821,7 @@ export namespace Prisma {
     notifikasis?: NotifikasiUncheckedUpdateManyWithoutUserNestedInput
     pembayarans?: PembayaranUncheckedUpdateManyWithoutUserNestedInput
     rekamMedisDokter?: RekamMedisUncheckedUpdateManyWithoutDokterNestedInput
+    patientIdentity?: PatientIdentityUncheckedUpdateOneWithoutUserNestedInput
   }
 
   export type PendaftaranUpsertWithoutRekamMedisInput = {
@@ -13792,6 +15920,7 @@ export namespace Prisma {
     pembayarans?: PembayaranCreateNestedManyWithoutUserInput
     rekamMedisDokter?: RekamMedisCreateNestedManyWithoutDokterInput
     rekamMedisPasien?: RekamMedisCreateNestedManyWithoutPasienInput
+    patientIdentity?: PatientIdentityCreateNestedOneWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutJadwalDokterInput = {
@@ -13823,6 +15952,7 @@ export namespace Prisma {
     pembayarans?: PembayaranUncheckedCreateNestedManyWithoutUserInput
     rekamMedisDokter?: RekamMedisUncheckedCreateNestedManyWithoutDokterInput
     rekamMedisPasien?: RekamMedisUncheckedCreateNestedManyWithoutPasienInput
+    patientIdentity?: PatientIdentityUncheckedCreateNestedOneWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutJadwalDokterInput = {
@@ -13870,6 +16000,7 @@ export namespace Prisma {
     pembayarans?: PembayaranUpdateManyWithoutUserNestedInput
     rekamMedisDokter?: RekamMedisUpdateManyWithoutDokterNestedInput
     rekamMedisPasien?: RekamMedisUpdateManyWithoutPasienNestedInput
+    patientIdentity?: PatientIdentityUpdateOneWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutJadwalDokterInput = {
@@ -13901,6 +16032,7 @@ export namespace Prisma {
     pembayarans?: PembayaranUncheckedUpdateManyWithoutUserNestedInput
     rekamMedisDokter?: RekamMedisUncheckedUpdateManyWithoutDokterNestedInput
     rekamMedisPasien?: RekamMedisUncheckedUpdateManyWithoutPasienNestedInput
+    patientIdentity?: PatientIdentityUncheckedUpdateOneWithoutUserNestedInput
   }
 
   export type UserCreateWithoutPembayaransInput = {
@@ -13932,6 +16064,7 @@ export namespace Prisma {
     notifikasis?: NotifikasiCreateNestedManyWithoutUserInput
     rekamMedisDokter?: RekamMedisCreateNestedManyWithoutDokterInput
     rekamMedisPasien?: RekamMedisCreateNestedManyWithoutPasienInput
+    patientIdentity?: PatientIdentityCreateNestedOneWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutPembayaransInput = {
@@ -13963,6 +16096,7 @@ export namespace Prisma {
     notifikasis?: NotifikasiUncheckedCreateNestedManyWithoutUserInput
     rekamMedisDokter?: RekamMedisUncheckedCreateNestedManyWithoutDokterInput
     rekamMedisPasien?: RekamMedisUncheckedCreateNestedManyWithoutPasienInput
+    patientIdentity?: PatientIdentityUncheckedCreateNestedOneWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutPembayaransInput = {
@@ -14010,6 +16144,7 @@ export namespace Prisma {
     notifikasis?: NotifikasiUpdateManyWithoutUserNestedInput
     rekamMedisDokter?: RekamMedisUpdateManyWithoutDokterNestedInput
     rekamMedisPasien?: RekamMedisUpdateManyWithoutPasienNestedInput
+    patientIdentity?: PatientIdentityUpdateOneWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutPembayaransInput = {
@@ -14041,6 +16176,7 @@ export namespace Prisma {
     notifikasis?: NotifikasiUncheckedUpdateManyWithoutUserNestedInput
     rekamMedisDokter?: RekamMedisUncheckedUpdateManyWithoutDokterNestedInput
     rekamMedisPasien?: RekamMedisUncheckedUpdateManyWithoutPasienNestedInput
+    patientIdentity?: PatientIdentityUncheckedUpdateOneWithoutUserNestedInput
   }
 
   export type UserCreateWithoutNotifikasisInput = {
@@ -14072,6 +16208,7 @@ export namespace Prisma {
     pembayarans?: PembayaranCreateNestedManyWithoutUserInput
     rekamMedisDokter?: RekamMedisCreateNestedManyWithoutDokterInput
     rekamMedisPasien?: RekamMedisCreateNestedManyWithoutPasienInput
+    patientIdentity?: PatientIdentityCreateNestedOneWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutNotifikasisInput = {
@@ -14103,6 +16240,7 @@ export namespace Prisma {
     pembayarans?: PembayaranUncheckedCreateNestedManyWithoutUserInput
     rekamMedisDokter?: RekamMedisUncheckedCreateNestedManyWithoutDokterInput
     rekamMedisPasien?: RekamMedisUncheckedCreateNestedManyWithoutPasienInput
+    patientIdentity?: PatientIdentityUncheckedCreateNestedOneWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutNotifikasisInput = {
@@ -14150,6 +16288,7 @@ export namespace Prisma {
     pembayarans?: PembayaranUpdateManyWithoutUserNestedInput
     rekamMedisDokter?: RekamMedisUpdateManyWithoutDokterNestedInput
     rekamMedisPasien?: RekamMedisUpdateManyWithoutPasienNestedInput
+    patientIdentity?: PatientIdentityUpdateOneWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutNotifikasisInput = {
@@ -14181,6 +16320,7 @@ export namespace Prisma {
     pembayarans?: PembayaranUncheckedUpdateManyWithoutUserNestedInput
     rekamMedisDokter?: RekamMedisUncheckedUpdateManyWithoutDokterNestedInput
     rekamMedisPasien?: RekamMedisUncheckedUpdateManyWithoutPasienNestedInput
+    patientIdentity?: PatientIdentityUncheckedUpdateOneWithoutUserNestedInput
   }
 
   export type JadwalDokterCreateManyDokterInput = {

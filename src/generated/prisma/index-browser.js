@@ -145,6 +145,29 @@ exports.Prisma.UserScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.PatientIdentityScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  nik: 'nik',
+  nama: 'nama',
+  tempatLahir: 'tempatLahir',
+  tanggalLahir: 'tanggalLahir',
+  jenisKelamin: 'jenisKelamin',
+  alamat: 'alamat',
+  rtRw: 'rtRw',
+  kelurahanDesa: 'kelurahanDesa',
+  kecamatan: 'kecamatan',
+  agama: 'agama',
+  statusPerkawinan: 'statusPerkawinan',
+  pekerjaan: 'pekerjaan',
+  kewarganegaraan: 'kewarganegaraan',
+  berlakuHingga: 'berlakuHingga',
+  isVerified: 'isVerified',
+  verifiedAt: 'verifiedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.PendaftaranScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
@@ -242,6 +265,7 @@ exports.Prisma.NullsOrder = {
 
 exports.Prisma.ModelName = {
   User: 'User',
+  PatientIdentity: 'PatientIdentity',
   Pendaftaran: 'Pendaftaran',
   RekamMedis: 'RekamMedis',
   JadwalDokter: 'JadwalDokter',
