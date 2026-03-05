@@ -731,15 +731,16 @@ function normalizeFieldForVote(field: KtpFieldKey, raw: string) {
     return normalizeStatusPerkawinan(value);
   }
 
+  const rawUpper = value.toUpperCase();
   const upper = normalizeAlphaOcr(value);
   if (field === "provinsi" || field === "kota_kabupaten") {
-    return upper.replace(/[^A-Z0-9 '.,/-]/g, " ").replace(/\s+/g, " ").trim();
+    return rawUpper.replace(/[^A-Z0-9 '.,/-]/g, " ").replace(/\s+/g, " ").trim();
   }
   if (field === "name") return upper.replace(/[^A-Z '.-]/g, " ").replace(/\s+/g, " ").trim();
   if (field === "tempat_lahir") return upper.replace(/[^A-Z '.,-]/g, " ").replace(/\s+/g, " ").trim();
-  if (field === "alamat") return upper.replace(/[^A-Z0-9 '.,/()-]/g, " ").replace(/\s+/g, " ").trim();
+  if (field === "alamat") return rawUpper.replace(/[^A-Z0-9 '.,/()-]/g, " ").replace(/\s+/g, " ").trim();
   if (field === "kelurahan_desa" || field === "kecamatan" || field === "pekerjaan") {
-    return upper.replace(/[^A-Z0-9 '.,/-]/g, " ").replace(/\s+/g, " ").trim();
+    return rawUpper.replace(/[^A-Z0-9 '.,/-]/g, " ").replace(/\s+/g, " ").trim();
   }
   return upper;
 }
@@ -1654,7 +1655,7 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
                     className="auth-input"
                     placeholder="001/002"
                     inputMode="numeric"
-                    pattern="^[0-9]{3}/[0-9]{3}$"
+                    pattern="^[0-9]{1,3}/[0-9]{1,3}$"
                     maxLength={7}
                   />
                 </div>

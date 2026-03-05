@@ -156,7 +156,7 @@ const registerSchema = z.object({
   jenis_kelamin: z.enum(["Laki-laki", "Perempuan"]),
   golongan_darah: z.string().min(1).max(4).optional(),
   alamat: z.string().min(4, "Alamat wajib diisi.").max(255),
-  rt_rw: z.string().regex(/^[0-9]{3}\/[0-9]{3}$/, "Format RT/RW harus 001/002."),
+  rt_rw: z.string().regex(/^[0-9]{1,3}\/[0-9]{1,3}$/, "Format RT/RW harus 001/002."),
   kelurahan_desa: z.string().min(2, "Kel/Desa wajib diisi.").max(120),
   kecamatan: z.string().min(2, "Kecamatan wajib diisi.").max(120),
   agama: z.string().min(2, "Agama wajib diisi.").max(32),
@@ -192,6 +192,10 @@ function resolveRegisterErrorMessage(reason: string) {
 
   if (text.includes("timed out") || text.includes("timeout")) {
     return "Koneksi database timeout. Coba ulang beberapa saat lagi.";
+  }
+
+  if (text.includes("invalid") || text.includes("argument")) {
+    return "Data register tidak cocok dengan struktur deployment. Sinkronkan build terbaru lalu coba lagi.";
   }
 
   if (text.includes("unique constraint")) {
@@ -267,8 +271,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const username = await ensureUniqueUsername(parsed.data.name, parsed.data.nik);
     const now = new Date();
     let user;
-    try {
-      user = await prisma.user.create({
+    const createVariants = [
+      {
+        name: "full",
         data: {
           name: parsed.data.name,
           username,
@@ -282,26 +287,47 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           createdAt: now,
           updatedAt: now,
         },
-      });
-    } catch (createUserError) {
-      const reason = createUserError instanceof Error ? createUserError.message : "create user failed";
-      // Fallback for deployment schema drift: create the account with minimum required fields.
-      if (/(unknown argument|column|field|schema|invalid)/i.test(reason)) {
-        user = await prisma.user.create({
-          data: {
-            name: parsed.data.name,
-            username,
-            email: parsed.data.email,
-            password: hash,
-            role: "pasien",
-            nik: parsed.data.nik,
-            createdAt: now,
-            updatedAt: now,
-          },
-        });
-      } else {
-        throw createUserError;
+      },
+      {
+        name: "medium",
+        data: {
+          name: parsed.data.name,
+          username,
+          email: parsed.data.email,
+          password: hash,
+          role: "pasien",
+          nik: parsed.data.nik,
+          alamat: composeAddress(parsed.data),
+        },
+      },
+      {
+        name: "minimal",
+        data: {
+          name: parsed.data.name,
+          username,
+          email: parsed.data.email,
+          password: hash,
+          role: "pasien",
+        },
+      },
+    ] as const;
+
+    let lastCreateError: unknown = null;
+    for (const variant of createVariants) {
+      try {
+        user = await prisma.user.create({ data: variant.data });
+        break;
+      } catch (createUserError) {
+        lastCreateError = createUserError;
+        const reason = createUserError instanceof Error ? createUserError.message : "create user failed";
+        console.error(`[register] create user failed (${variant.name}):`, reason);
+        if (!/(unknown argument|column|field|schema|invalid)/i.test(reason)) {
+          throw createUserError;
+        }
       }
+    }
+    if (!user) {
+      throw (lastCreateError instanceof Error ? lastCreateError : new Error("Create user failed"));
     }
 
     let identitySyncWarning: string | null = null;
