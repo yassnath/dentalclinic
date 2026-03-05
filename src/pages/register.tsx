@@ -257,6 +257,30 @@ type KtpFieldKey =
   | "kewarganegaraan"
   | "berlaku_hingga";
 
+type OcrCandidate = {
+  text: string;
+  confidence: number;
+  source: string;
+  mode: string;
+};
+
+const KTP_FIELDS: KtpFieldKey[] = [
+  "nik",
+  "name",
+  "tempat_lahir",
+  "tanggal_lahir",
+  "jenis_kelamin",
+  "alamat",
+  "rt_rw",
+  "kelurahan_desa",
+  "kecamatan",
+  "agama",
+  "status_perkawinan",
+  "pekerjaan",
+  "kewarganegaraan",
+  "berlaku_hingga",
+];
+
 function parseKtpDate(raw: string) {
   return normalizeDateInput(raw.trim());
 }
@@ -638,6 +662,78 @@ function parseKtpText(raw: string): Partial<RegisterValues> {
   };
 }
 
+function normalizeFieldForVote(field: KtpFieldKey, raw: string) {
+  const value = cleanLine(raw);
+  if (!value) return "";
+
+  if (field === "nik") {
+    return normalizeOcrNumeric(value).replace(/\D/g, "").slice(0, 16);
+  }
+  if (field === "tanggal_lahir") {
+    return parseKtpDate(value);
+  }
+  if (field === "jenis_kelamin") {
+    return normalizeGender(value);
+  }
+  if (field === "rt_rw") {
+    return normalizeRtRw(value);
+  }
+  if (field === "kewarganegaraan") {
+    return normalizeKewarganegaraan(value);
+  }
+  if (field === "berlaku_hingga") {
+    return normalizeBerlakuHingga(value);
+  }
+  if (field === "agama") {
+    return normalizeAgama(value) || value.toUpperCase();
+  }
+  if (field === "status_perkawinan") {
+    return normalizeStatusPerkawinan(value);
+  }
+  return value;
+}
+
+function mergeParsedKtpResults(votes: Array<{ data: Partial<RegisterValues>; weight: number }>): Partial<RegisterValues> {
+  const merged: Partial<RegisterValues> = {};
+
+  for (const field of KTP_FIELDS) {
+    const scoreMap = new Map<string, { score: number; rawLength: number }>();
+    for (const vote of votes) {
+      const raw = vote.data[field];
+      if (typeof raw !== "string") continue;
+
+      const normalized = normalizeFieldForVote(field, raw);
+      if (!normalized) continue;
+
+      if (field === "nik" && normalized.length !== 16) continue;
+      if (field === "tanggal_lahir" && !/^\d{4}-\d{2}-\d{2}$/.test(normalized)) continue;
+      if (field === "jenis_kelamin" && normalized !== "Laki-laki" && normalized !== "Perempuan") continue;
+
+      const current = scoreMap.get(normalized) ?? { score: 0, rawLength: 0 };
+      current.score += Math.max(1, vote.weight);
+      current.rawLength = Math.max(current.rawLength, raw.length);
+      scoreMap.set(normalized, current);
+    }
+
+    const best = [...scoreMap.entries()].sort((a, b) => {
+      if (b[1].score !== a[1].score) return b[1].score - a[1].score;
+      return b[1].rawLength - a[1].rawLength;
+    })[0]?.[0];
+
+    if (!best) continue;
+
+    if (field === "jenis_kelamin") {
+      merged.jenis_kelamin = best as RegisterValues["jenis_kelamin"];
+    } else {
+      merged[field] = best;
+    }
+  }
+
+  if (!merged.kewarganegaraan) merged.kewarganegaraan = "WNI";
+  if (!merged.berlaku_hingga) merged.berlaku_hingga = "SEUMUR HIDUP";
+  return merged;
+}
+
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
@@ -658,9 +754,9 @@ async function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality = 0
   });
 }
 
-async function buildOcrSources(source: Blob): Promise<Blob[]> {
+async function buildOcrSources(source: Blob): Promise<Array<{ name: string; blob: Blob }>> {
   if (typeof window === "undefined" || typeof createImageBitmap !== "function") {
-    return [source];
+    return [{ name: "original", blob: source }];
   }
 
   const bitmap = await createImageBitmap(source);
@@ -671,7 +767,7 @@ async function buildOcrSources(source: Blob): Promise<Blob[]> {
   baseCanvas.width = scaledWidth;
   baseCanvas.height = scaledHeight;
   const baseCtx = baseCanvas.getContext("2d", { willReadFrequently: true });
-  if (!baseCtx) return [source];
+  if (!baseCtx) return [{ name: "original", blob: source }];
 
   baseCtx.drawImage(bitmap, 0, 0, scaledWidth, scaledHeight);
   const baseData = baseCtx.getImageData(0, 0, scaledWidth, scaledHeight);
@@ -680,7 +776,7 @@ async function buildOcrSources(source: Blob): Promise<Blob[]> {
   enhancedCanvas.width = scaledWidth;
   enhancedCanvas.height = scaledHeight;
   const enhancedCtx = enhancedCanvas.getContext("2d", { willReadFrequently: true });
-  if (!enhancedCtx) return [source];
+  if (!enhancedCtx) return [{ name: "original", blob: source }];
 
   const enhanced = new ImageData(new Uint8ClampedArray(baseData.data), scaledWidth, scaledHeight);
   for (let i = 0; i < enhanced.data.length; i += 4) {
@@ -699,45 +795,102 @@ async function buildOcrSources(source: Blob): Promise<Blob[]> {
   binaryCanvas.width = scaledWidth;
   binaryCanvas.height = scaledHeight;
   const binaryCtx = binaryCanvas.getContext("2d", { willReadFrequently: true });
-  if (!binaryCtx) {
-    return [source, await canvasToBlob(enhancedCanvas, "image/png")];
-  }
+  if (!binaryCtx) return [{ name: "original", blob: source }, { name: "enhanced", blob: await canvasToBlob(enhancedCanvas, "image/png") }];
+
+  const binarySoftCanvas = document.createElement("canvas");
+  binarySoftCanvas.width = scaledWidth;
+  binarySoftCanvas.height = scaledHeight;
+  const binarySoftCtx = binarySoftCanvas.getContext("2d", { willReadFrequently: true });
+
   const binary = new ImageData(new Uint8ClampedArray(enhanced.data), scaledWidth, scaledHeight);
+  const binarySoft = new ImageData(new Uint8ClampedArray(enhanced.data), scaledWidth, scaledHeight);
   for (let i = 0; i < binary.data.length; i += 4) {
-    const value = binary.data[i] > 150 ? 255 : 0;
-    binary.data[i] = value;
-    binary.data[i + 1] = value;
-    binary.data[i + 2] = value;
+    const hard = binary.data[i] > 148 ? 255 : 0;
+    const soft = binarySoft.data[i] > 172 ? 255 : 0;
+    binary.data[i] = hard;
+    binary.data[i + 1] = hard;
+    binary.data[i + 2] = hard;
+    binarySoft.data[i] = soft;
+    binarySoft.data[i + 1] = soft;
+    binarySoft.data[i + 2] = soft;
   }
   binaryCtx.putImageData(binary, 0, 0);
+  if (binarySoftCtx) binarySoftCtx.putImageData(binarySoft, 0, 0);
+
+  const cropMarginX = Math.floor(scaledWidth * 0.035);
+  const cropMarginY = Math.floor(scaledHeight * 0.06);
+  const cropWidth = Math.max(32, scaledWidth - cropMarginX * 2);
+  const cropHeight = Math.max(32, scaledHeight - cropMarginY * 2);
+  const croppedCanvas = document.createElement("canvas");
+  croppedCanvas.width = scaledWidth;
+  croppedCanvas.height = scaledHeight;
+  const croppedCtx = croppedCanvas.getContext("2d");
+  if (croppedCtx) {
+    croppedCtx.fillStyle = "#fff";
+    croppedCtx.fillRect(0, 0, scaledWidth, scaledHeight);
+    croppedCtx.drawImage(enhancedCanvas, cropMarginX, cropMarginY, cropWidth, cropHeight, 0, 0, scaledWidth, scaledHeight);
+  }
 
   const enhancedBlob = await canvasToBlob(enhancedCanvas, "image/png");
   const binaryBlob = await canvasToBlob(binaryCanvas, "image/png");
-  return [source, enhancedBlob, binaryBlob];
+  const binarySoftBlob = binarySoftCtx ? await canvasToBlob(binarySoftCanvas, "image/png") : binaryBlob;
+  const croppedBlob = croppedCtx ? await canvasToBlob(croppedCanvas, "image/png") : enhancedBlob;
+
+  return [
+    { name: "original", blob: source },
+    { name: "enhanced", blob: enhancedBlob },
+    { name: "binary-hard", blob: binaryBlob },
+    { name: "binary-soft", blob: binarySoftBlob },
+    { name: "cropped", blob: croppedBlob },
+  ];
 }
 
-async function runKtpOcr(source: Blob) {
+async function runKtpOcr(source: Blob): Promise<OcrCandidate[]> {
   const tesseract = await import("tesseract.js");
   const worker = await tesseract.createWorker(["ind", "eng"]);
-  const passModes = [tesseract.PSM.SPARSE_TEXT, tesseract.PSM.SINGLE_BLOCK];
+  const passModes = [tesseract.PSM.SPARSE_TEXT, tesseract.PSM.SINGLE_BLOCK, tesseract.PSM.SINGLE_COLUMN];
 
   try {
     const sources = await buildOcrSources(source);
-    const texts: string[] = [];
+    const seen = new Map<string, OcrCandidate>();
+    const candidates: OcrCandidate[] = [];
+
+    const upsertCandidate = (candidate: OcrCandidate) => {
+      const key = candidate.text.replace(/\s+/g, " ").trim();
+      if (key.length < 18) return;
+      const existing = seen.get(key);
+      if (!existing || candidate.confidence > existing.confidence) {
+        seen.set(key, candidate);
+      }
+    };
+
     for (const item of sources) {
       for (const mode of passModes) {
         await worker.setParameters({
           tessedit_pageseg_mode: mode,
           preserve_interword_spaces: "1",
+          user_defined_dpi: "300",
+          tessedit_char_blacklist: "[]{}<>`~",
         });
-        const result = await worker.recognize(item, { rotateAuto: true });
+        const result = await worker.recognize(item.blob, { rotateAuto: true });
         const text = result.data.text?.trim();
-        if (text && !texts.includes(text)) {
-          texts.push(text);
+        if (text) {
+          upsertCandidate({
+            text,
+            confidence: Number(result.data.confidence ?? 0),
+            source: item.name,
+            mode: String(mode),
+          });
         }
       }
     }
-    return texts.join("\n");
+
+    for (const value of seen.values()) {
+      candidates.push(value);
+    }
+
+    candidates.sort((a, b) => b.confidence - a.confidence);
+    return candidates;
   } finally {
     await worker.terminate();
   }
@@ -955,9 +1108,18 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
         }, "image/jpeg", 0.95);
       });
 
-      setScanMessage("Menganalisa teks KTP (OCR multi-pass)...");
-      const text = await runKtpOcr(blob);
-      const extracted = parseKtpText(text);
+      setScanMessage("Menganalisa teks KTP (OCR multi-pass & voting)...");
+      const ocrCandidates = await runKtpOcr(blob);
+      if (!ocrCandidates.length) {
+        throw new Error("Tidak ada teks terbaca dari OCR.");
+      }
+
+      const weightedCandidates = ocrCandidates.map((item) => ({
+        data: parseKtpText(item.text),
+        weight: Math.max(1, Math.round(item.confidence / 18)),
+      }));
+      const combinedParse = parseKtpText(ocrCandidates.map((item) => item.text).join("\n"));
+      const extracted = mergeParsedKtpResults([...weightedCandidates, { data: combinedParse, weight: 3 }]);
       applyKtpResult(extracted);
 
       const requiredKeys: KtpFieldKey[] = [
@@ -1006,10 +1168,12 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
           .map((key) => labels[key])
           .join(", ");
         const suffix = missing.length > 4 ? ` +${missing.length - 4} kolom lain` : "";
-        setScanMessage(`Scan berhasil sebagian. ${filledCount} kolom terisi otomatis.`);
+        const topConfidence = ocrCandidates[0]?.confidence ? ` (confidence terbaik: ${Math.round(ocrCandidates[0].confidence)}%)` : "";
+        setScanMessage(`Scan berhasil sebagian. ${filledCount} kolom terisi otomatis${topConfidence}.`);
         setScanError(`Kolom yang belum terbaca: ${previewMissing}${suffix}. Silakan koreksi manual atau scan ulang.`);
       } else {
-        setScanMessage(`Scan selesai. Semua kolom KTP berhasil diisi otomatis.`);
+        const topConfidence = ocrCandidates[0]?.confidence ? ` (confidence terbaik: ${Math.round(ocrCandidates[0].confidence)}%)` : "";
+        setScanMessage(`Scan selesai. Semua kolom KTP berhasil diisi otomatis${topConfidence}.`);
         setScanError("");
       }
     } catch {
@@ -1034,11 +1198,11 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
         <title>Register Pasien</title>
       </Head>
 
-      <div className="auth-shell min-h-screen font-modify text-body">
+      <div className="auth-shell min-h-[100svh] font-modify text-body">
         <div className="auth-orb auth-orb-a" />
         <div className="auth-orb auth-orb-b" />
 
-        <div className="mx-auto flex min-h-screen w-full max-w-6xl items-start px-4 py-6 sm:items-center sm:py-10">
+        <div className="mx-auto flex min-h-[100svh] w-full max-w-6xl items-center px-4 py-4 sm:py-8">
           <div className="auth-card grid w-full gap-3 p-2 sm:gap-4 sm:p-3 lg:grid-cols-2 lg:p-4">
             <aside className="auth-panel hidden p-8 lg:block">
               <span className="auth-badge">

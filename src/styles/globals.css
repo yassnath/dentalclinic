@@ -1091,6 +1091,7 @@ table:is(.responsive-table, .theme-table) td {
 .auth-shell {
   position: relative;
   isolation: isolate;
+  min-height: 100svh;
   background:
     radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--primary-main) 16%, transparent) 0%, transparent 45%),
     radial-gradient(circle at 100% 10%, color-mix(in srgb, var(--secondary-main) 16%, transparent) 0%, transparent 42%),
@@ -1287,6 +1288,8 @@ table:is(.responsive-table, .theme-table) td {
 @media (max-width: 640px) {
   .auth-shell {
     overflow-x: hidden;
+    display: flex;
+    align-items: center;
     background:
       radial-gradient(140% 74% at 50% -12%, color-mix(in srgb, var(--primary-main) 14%, transparent) 0%, transparent 62%),
       linear-gradient(180deg, color-mix(in srgb, var(--bg-page) 90%, var(--bg-surface)) 0%, var(--bg-page) 100%);
@@ -1333,6 +1336,21 @@ table:is(.responsive-table, .theme-table) td {
 
   .auth-btn {
     padding: 12px 15px;
+  }
+
+  .ktp-scan-overlay {
+    place-items: center;
+    padding:
+      max(12px, env(safe-area-inset-top))
+      12px
+      max(12px, env(safe-area-inset-bottom));
+  }
+
+  .ktp-scan-card {
+    width: min(94vw, 560px);
+    max-height: calc(100svh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px);
+    overflow: auto;
+    margin: 0 auto;
   }
 }
 
@@ -1507,4 +1525,3 @@ table:is(.responsive-table, .theme-table) td {
 [data-theme="dark"] .dashboard-nav-link.is-active {
   border-color: color-mix(in srgb, var(--primary-light) 56%, transparent);
 }
-
