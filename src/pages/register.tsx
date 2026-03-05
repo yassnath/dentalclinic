@@ -41,7 +41,7 @@ function emptyValues(): RegisterValues {
     tempat_lahir: "",
     tanggal_lahir: "",
     jenis_kelamin: "",
-    golongan_darah: "-",
+    golongan_darah: "",
     alamat: "",
     rt_rw: "",
     kelurahan_desa: "",
@@ -49,8 +49,8 @@ function emptyValues(): RegisterValues {
     agama: "",
     status_perkawinan: "",
     pekerjaan: "",
-    kewarganegaraan: "WNI",
-    berlaku_hingga: "SEUMUR HIDUP",
+    kewarganegaraan: "",
+    berlaku_hingga: "",
     email: "",
     password: "",
   };
@@ -478,11 +478,7 @@ function parseKtpText(raw: string): Partial<RegisterValues> {
     .map((line) => cleanLine(line))
     .filter(Boolean);
 
-  const result: Partial<RegisterValues> = {
-    kewarganegaraan: "WNI",
-    berlaku_hingga: "SEUMUR HIDUP",
-    golongan_darah: "-",
-  };
+  const result: Partial<RegisterValues> = {};
 
   for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i];
@@ -686,7 +682,7 @@ function parseKtpText(raw: string): Partial<RegisterValues> {
     tempat_lahir: normalizeFieldForVote("tempat_lahir", result.tempat_lahir ?? ""),
     tanggal_lahir: parseKtpDate(result.tanggal_lahir ?? ""),
     jenis_kelamin: normalizeGender(result.jenis_kelamin ?? ""),
-    golongan_darah: normalizeGolonganDarah(result.golongan_darah ?? "-") || "-",
+    golongan_darah: normalizeGolonganDarah(result.golongan_darah ?? "") || "",
     alamat: normalizeTextField(result.alamat),
     rt_rw: normalizeRtRw(result.rt_rw ?? ""),
     kelurahan_desa: normalizeTextField(result.kelurahan_desa),
@@ -694,8 +690,8 @@ function parseKtpText(raw: string): Partial<RegisterValues> {
     agama: normalizeAgama(result.agama ?? "") || normalizeTextField(result.agama),
     status_perkawinan: normalizeStatusPerkawinan(result.status_perkawinan ?? "") || normalizeTextField(result.status_perkawinan),
     pekerjaan: normalizeTextField(result.pekerjaan),
-    kewarganegaraan: normalizeKewarganegaraan(result.kewarganegaraan ?? "WNI") || "WNI",
-    berlaku_hingga: normalizeBerlakuHingga(result.berlaku_hingga ?? "SEUMUR HIDUP") || "SEUMUR HIDUP",
+    kewarganegaraan: normalizeKewarganegaraan(result.kewarganegaraan ?? ""),
+    berlaku_hingga: normalizeBerlakuHingga(result.berlaku_hingga ?? ""),
   };
 }
 
@@ -1637,6 +1633,7 @@ export default function RegisterPage({ error, values }: RegisterPageProps) {
                 <div>
                   <label className="auth-label">Golongan Darah</label>
                   <select name="golongan_darah" required value={formValues.golongan_darah} onChange={onFieldChange} className="auth-input">
+                    <option value="">-- Pilih --</option>
                     <option value="-">-</option>
                     <option value="A">A</option>
                     <option value="B">B</option>

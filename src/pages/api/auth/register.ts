@@ -92,7 +92,7 @@ function normalizeForValidation(values: RegisterValues): RegisterValues {
     tempat_lahir: values.tempat_lahir.trim(),
     tanggal_lahir: normalizeDateInput(values.tanggal_lahir),
     jenis_kelamin: normalizeGender(values.jenis_kelamin),
-    golongan_darah: values.golongan_darah.trim().toUpperCase() || "-",
+    golongan_darah: values.golongan_darah.trim().toUpperCase(),
     alamat: values.alamat.trim(),
     rt_rw: normalizeRtRw(values.rt_rw),
     kelurahan_desa: values.kelurahan_desa.trim(),
@@ -126,12 +126,9 @@ async function ensureUniqueUsername(name: string, nik: string) {
 }
 
 function composeAddress(
-  values: Pick<RegisterValues, "alamat" | "rt_rw" | "kelurahan_desa" | "kecamatan"> &
-    Partial<Pick<RegisterValues, "provinsi" | "kota_kabupaten">>,
+  values: Pick<RegisterValues, "alamat">,
 ) {
-  const region = [values.provinsi ?? "", values.kota_kabupaten ?? ""].filter(Boolean).join(", ");
-  const joined = `${region ? `${region}, ` : ""}${values.alamat}, RT/RW ${values.rt_rw}, Kel/Desa ${values.kelurahan_desa}, Kecamatan ${values.kecamatan}`;
-  return joined.slice(0, 255);
+  return values.alamat.slice(0, 255);
 }
 
 function isValidIsoDate(value: string) {

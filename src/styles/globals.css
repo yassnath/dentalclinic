@@ -871,6 +871,7 @@ table:is(.responsive-table, .theme-table) td {
     radial-gradient(circle at -10% -10%, color-mix(in srgb, var(--primary-main) 16%, transparent) 0%, transparent 48%),
     radial-gradient(circle at 110% 115%, color-mix(in srgb, var(--secondary-main) 16%, transparent) 0%, transparent 46%),
     var(--bg-surface);
+  overscroll-behavior: none;
 }
 
 .dashboard-brand {
@@ -1418,6 +1419,12 @@ table:is(.responsive-table, .theme-table) td {
     max-height: calc(100svh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px);
     overflow: auto;
     margin: 0 auto;
+  }
+
+  .dashboard-sidebar {
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
   }
 }
 

@@ -118,6 +118,23 @@ export default function DashboardLayout({
     };
   }, []);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const isMobile = window.matchMedia("(max-width: 639px)").matches;
+    if (!isMobile || !open) return;
+
+    const htmlOverflow = document.documentElement.style.overflow;
+    const bodyOverflow = document.body.style.overflow;
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.documentElement.style.overflow = htmlOverflow;
+      document.body.style.overflow = bodyOverflow;
+    };
+  }, [open]);
+
   return (
     <div className="dashboard-shell min-h-screen bg-app text-body">
       {open ? (
@@ -130,7 +147,7 @@ export default function DashboardLayout({
 
       <div className="min-h-screen sm:flex">
         <aside
-          className={`dashboard-sidebar fixed inset-y-0 left-0 z-50 w-72 transform border-r border-soft bg-surface p-6 shadow-lg transition-transform duration-300 ease-out sm:static sm:translate-x-0 ${
+          className={`dashboard-sidebar fixed inset-y-0 left-0 z-50 h-[100dvh] w-72 overflow-hidden transform border-r border-soft bg-surface p-6 shadow-lg transition-transform duration-300 ease-out sm:static sm:h-auto sm:translate-x-0 sm:overflow-visible ${
             open ? "translate-x-0" : "-translate-x-full"
           }`}
         >
@@ -242,4 +259,3 @@ export default function DashboardLayout({
     </div>
   );
 }
-
