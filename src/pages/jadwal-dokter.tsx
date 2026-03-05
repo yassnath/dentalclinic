@@ -44,62 +44,90 @@ export const getServerSideProps: GetServerSideProps<JadwalDokterPageProps> = asy
   const selectedTanggal = typeof ctx.query.tanggal_kunjungan === "string" ? ctx.query.tanggal_kunjungan : "";
   const selectedSpesialis = typeof ctx.query.spesialis === "string" ? ctx.query.spesialis : "";
 
-  const allJadwals = await prisma.jadwalDokter.findMany({
-    orderBy: [{ hari: "asc" }, { jamMulai: "asc" }],
-    include: {
-      dokter: true,
-    },
-  });
-
-  const spesialisListRows = await prisma.user.findMany({
-    where: {
-      role: "dokter",
-      spesialis: {
-        not: null,
-      },
-    },
-    select: { spesialis: true },
-    distinct: ["spesialis"],
-    orderBy: { spesialis: "asc" },
-  });
-
-  const spesialisList = spesialisListRows.map((row) => row.spesialis ?? "").filter((value) => value.trim() !== "");
-
+  let allJadwals: Array<{
+    id: bigint;
+    dokterId: bigint;
+    hari: string;
+    jamMulai: Date;
+    jamSelesai: Date;
+  }> = [];
+  let spesialisList: string[] = [];
   let dokters: Array<{ id: string; name: string; spesialis: string | null }> = [];
-  if (selectedTanggal && selectedSpesialis) {
-    const hari = toHariIndonesia(selectedTanggal);
+  let dokterNameMap = new Map<string, { name: string; spesialis: string | null }>();
 
-    const candidates = await prisma.user.findMany({
+  try {
+    allJadwals = await prisma.jadwalDokter.findMany({
+      orderBy: [{ hari: "asc" }, { jamMulai: "asc" }],
+      select: {
+        id: true,
+        dokterId: true,
+        hari: true,
+        jamMulai: true,
+        jamSelesai: true,
+      },
+    });
+
+    const dokterIds = [...new Set(allJadwals.map((item) => item.dokterId.toString()))].map((id) => BigInt(id));
+    const dokterRows = dokterIds.length
+      ? await prisma.user.findMany({
+          where: { id: { in: dokterIds } },
+          select: { id: true, name: true, spesialis: true },
+        })
+      : [];
+    dokterNameMap = new Map(dokterRows.map((row) => [row.id.toString(), { name: row.name, spesialis: row.spesialis }]));
+
+    const spesialisListRows = await prisma.user.findMany({
       where: {
         role: "dokter",
-        spesialis: selectedSpesialis,
-      },
-      orderBy: { name: "asc" },
-    });
-
-    const jadwalsForTanggal = await prisma.jadwalDokter.findMany({
-      where: {
-        dokterId: {
-          in: candidates.map((doctor) => doctor.id),
+        spesialis: {
+          not: null,
         },
-        hari,
       },
+      select: { spesialis: true },
+      distinct: ["spesialis"],
+      orderBy: { spesialis: "asc" },
     });
 
-    const jadwalDoctorIds = new Set(jadwalsForTanggal.map((item) => item.dokterId.toString()));
-    const filtered = [];
-    for (const doctor of candidates) {
-      if (!jadwalDoctorIds.has(doctor.id.toString())) continue;
-      const count = await countForDoctorOnDate(doctor.id, selectedTanggal);
-      if (count < 5) {
-        filtered.push({
-          id: doctor.id.toString(),
-          name: doctor.name,
-          spesialis: doctor.spesialis,
-        });
+    spesialisList = spesialisListRows.map((row) => row.spesialis ?? "").filter((value) => value.trim() !== "");
+
+    if (selectedTanggal && selectedSpesialis) {
+      const hari = toHariIndonesia(selectedTanggal);
+
+      const candidates = await prisma.user.findMany({
+        where: {
+          role: "dokter",
+          spesialis: selectedSpesialis,
+        },
+        orderBy: { name: "asc" },
+      });
+
+      const jadwalsForTanggal = await prisma.jadwalDokter.findMany({
+        where: {
+          dokterId: {
+            in: candidates.map((doctor) => doctor.id),
+          },
+          hari,
+        },
+        select: { dokterId: true },
+      });
+
+      const jadwalDoctorIds = new Set(jadwalsForTanggal.map((item) => item.dokterId.toString()));
+      const filtered = [];
+      for (const doctor of candidates) {
+        if (!jadwalDoctorIds.has(doctor.id.toString())) continue;
+        const count = await countForDoctorOnDate(doctor.id, selectedTanggal);
+        if (count < 5) {
+          filtered.push({
+            id: doctor.id.toString(),
+            name: doctor.name,
+            spesialis: doctor.spesialis,
+          });
+        }
       }
+      dokters = filtered;
     }
-    dokters = filtered;
+  } catch (error) {
+    console.error("[jadwal-dokter] failed to load jadwal data:", error instanceof Error ? error.message : String(error));
   }
 
   return {
@@ -108,8 +136,8 @@ export const getServerSideProps: GetServerSideProps<JadwalDokterPageProps> = asy
       unreadNotifCount,
       jadwals: allJadwals.map((jadwal) => ({
         id: jadwal.id.toString(),
-        dokter: jadwal.dokter?.name ?? "Nama Dokter",
-        spesialis: jadwal.dokter?.spesialis ?? "-",
+        dokter: dokterNameMap.get(jadwal.dokterId.toString())?.name ?? "Nama Dokter",
+        spesialis: dokterNameMap.get(jadwal.dokterId.toString())?.spesialis ?? "-",
         hari: jadwal.hari,
         jamMulai: jadwal.jamMulai.toISOString(),
         jamSelesai: jadwal.jamSelesai.toISOString(),

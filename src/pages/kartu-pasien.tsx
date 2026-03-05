@@ -1,7 +1,4 @@
-import fs from "fs/promises";
-import path from "path";
 import type { GetServerSideProps } from "next";
-import QRCode from "qrcode";
 import DashboardLayout from "@/components/DashboardLayout";
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -14,24 +11,9 @@ type PageProps = {
   qrUrl: string | null;
 };
 
-async function ensureQr(user: SessionUser) {
+function resolveQrUrl(user: SessionUser) {
   if (!user.qr_token) return null;
-  const fileName = `${user.qr_token}.png`;
-  const publicDir = path.join(process.cwd(), "public", "patient_qr");
-  const absolute = path.join(publicDir, fileName);
-  const relative = `/patient_qr/${fileName}`;
-
-  try {
-    await fs.mkdir(publicDir, { recursive: true });
-    await fs.access(absolute);
-    return relative;
-  } catch {
-    const baseUrl = process.env.APP_URL ?? "http://localhost:3000";
-    const scanUrl = `${baseUrl}/scan/pasien/${user.qr_token}`;
-    const png = await QRCode.toBuffer(scanUrl, { type: "png", width: 250, margin: 1 });
-    await fs.writeFile(absolute, png);
-    return relative;
-  }
+  return `/api/qr/pasien/${user.qr_token}`;
 }
 
 export const getServerSideProps: GetServerSideProps<PageProps> = async (ctx) => {
@@ -57,20 +39,13 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (ctx) => 
   const unreadNotifCount = await safeUnreadNotifCount(currentUser.id);
 
   const user = toSessionUser(currentUser);
-  const qrUrl = await ensureQr(user);
-
-  if (qrUrl && currentUser.qrPath !== qrUrl.replace(/^\//, "")) {
-    await prisma.user.update({
-      where: { id: currentUser.id },
-      data: { qrPath: qrUrl.replace(/^\//, "") },
-    });
-  }
+  const qrUrl = resolveQrUrl(user);
 
   return {
     props: {
       user: {
         ...user,
-        qr_path: qrUrl ? qrUrl.replace(/^\//, "") : user.qr_path,
+        qr_path: qrUrl ?? user.qr_path,
       },
       unreadNotifCount,
       qrUrl,

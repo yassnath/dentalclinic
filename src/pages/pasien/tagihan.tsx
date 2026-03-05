@@ -23,40 +23,80 @@ type PageProps = {
   error?: string;
 };
 
+async function safeTagihanRows(userId: bigint): Promise<TagihanRow[]> {
+  try {
+    const rows = await prisma.pembayaran.findMany({
+      where: { userId },
+      select: {
+        id: true,
+        jumlah: true,
+        status: true,
+        buktiPembayaran: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return rows.map((item) => ({
+      id: item.id.toString(),
+      jumlah: item.jumlah.toString(),
+      status: item.status,
+      bukti_pembayaran: item.buktiPembayaran,
+    }));
+  } catch (error) {
+    console.error("[pasien/tagihan] prisma query failed:", error instanceof Error ? error.message : String(error));
+  }
+
+  try {
+    const rows = await prisma.$queryRawUnsafe<
+      Array<{ id: string; jumlah: string; status: string; bukti_pembayaran: string | null }>
+    >(
+      "SELECT id::text AS id, COALESCE(jumlah::text, '0') AS jumlah, COALESCE(status::text, '-') AS status, bukti_pembayaran::text AS bukti_pembayaran FROM public.pembayarans WHERE user_id = $1 ORDER BY created_at DESC NULLS LAST, id DESC",
+      userId.toString(),
+    );
+    return rows;
+  } catch {
+    try {
+      const rows = await prisma.$queryRawUnsafe<Array<{ id: string; jumlah: string; status: string }>>(
+        "SELECT id::text AS id, COALESCE(jumlah::text, '0') AS jumlah, COALESCE(status::text, '-') AS status FROM public.pembayarans WHERE user_id = $1 ORDER BY created_at DESC NULLS LAST, id DESC",
+        userId.toString(),
+      );
+      return rows.map((row) => ({
+        ...row,
+        bukti_pembayaran: null,
+      }));
+    } catch (error) {
+      console.error("[pasien/tagihan] fallback query failed:", error instanceof Error ? error.message : String(error));
+      return [];
+    }
+  }
+}
+
 export const getServerSideProps: GetServerSideProps<PageProps> = async (ctx) => {
   const auth = await requireAuth(ctx, { roles: ["pasien"] });
   if ("redirect" in auth) return auth;
 
   const loadData = async () => {
-    const [unreadNotifCount, pembayarans] = await Promise.all([
-      safeUnreadNotifCount(auth.user.id),
-      prisma.pembayaran.findMany({
-        where: { userId: auth.user.id },
-        select: {
-          id: true,
-          jumlah: true,
-          status: true,
-          buktiPembayaran: true,
-        },
-        orderBy: { createdAt: "desc" },
-      }),
-    ]);
+    const [unreadNotifCount, pembayarans] = await Promise.all([safeUnreadNotifCount(auth.user.id), safeTagihanRows(auth.user.id)]);
     return { unreadNotifCount, pembayarans };
   };
 
   const cacheKey = makeSsrCacheKey(`pasien-tagihan:${auth.user.id.toString()}`, ctx.query);
-  const data = shouldBypassSsrCache(ctx.query) ? await loadData() : await withSsrCache(cacheKey, 5000, loadData);
+  let data: Awaited<ReturnType<typeof loadData>>;
+  try {
+    data = shouldBypassSsrCache(ctx.query) ? await loadData() : await withSsrCache(cacheKey, 5000, loadData);
+  } catch (error) {
+    console.error("[pasien/tagihan] failed to load page data:", error instanceof Error ? error.message : String(error));
+    data = {
+      unreadNotifCount: 0,
+      pembayarans: [],
+    };
+  }
 
   return {
     props: {
       user: toSessionUser(auth.user),
       unreadNotifCount: data.unreadNotifCount,
-      pembayarans: data.pembayarans.map((item) => ({
-        id: item.id.toString(),
-        jumlah: item.jumlah.toString(),
-        status: item.status,
-        bukti_pembayaran: item.buktiPembayaran,
-      })),
+      pembayarans: data.pembayarans,
       success: typeof ctx.query.success === "string" ? ctx.query.success : "",
       error: typeof ctx.query.error === "string" ? ctx.query.error : "",
     },

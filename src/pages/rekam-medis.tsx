@@ -21,37 +21,95 @@ type PageProps = {
   rekamMedisList: RekamRow[];
 };
 
+async function safeRekamMedisRows(userId: bigint): Promise<RekamRow[]> {
+  try {
+    const rows = await prisma.rekamMedis.findMany({
+      where: {
+        OR: [{ pasienId: userId }, { pendaftaran: { userId } }],
+      },
+      select: {
+        id: true,
+        createdAt: true,
+        diagnosa: true,
+        tindakan: true,
+        catatan: true,
+        dokterId: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const dokterIds = [...new Set(rows.map((row) => row.dokterId?.toString()).filter((id): id is string => Boolean(id)))].map((id) => BigInt(id));
+    const doctors = dokterIds.length
+      ? await prisma.user.findMany({
+          where: { id: { in: dokterIds } },
+          select: { id: true, name: true },
+        })
+      : [];
+    const dokterMap = new Map(doctors.map((dokter) => [dokter.id.toString(), dokter.name]));
+
+    return rows.map((rekam) => ({
+      id: rekam.id.toString(),
+      tanggal: rekam.createdAt ? rekam.createdAt.toISOString() : null,
+      dokter: rekam.dokterId ? (dokterMap.get(rekam.dokterId.toString()) ?? "Tidak diketahui") : "Tidak diketahui",
+      diagnosa: rekam.diagnosa,
+      tindakan: rekam.tindakan,
+      catatan: rekam.catatan,
+    }));
+  } catch (error) {
+    console.error("[rekam-medis] prisma query failed:", error instanceof Error ? error.message : String(error));
+  }
+
+  try {
+    const rows = await prisma.$queryRawUnsafe<
+      Array<{
+        id: string;
+        tanggal: Date | string | null;
+        dokter: string | null;
+        diagnosa: string | null;
+        tindakan: string | null;
+        catatan: string | null;
+      }>
+    >(
+      `SELECT
+         rm.id::text AS id,
+         rm.created_at AS tanggal,
+         u.name::text AS dokter,
+         rm.diagnosa::text AS diagnosa,
+         rm.tindakan::text AS tindakan,
+         rm.catatan::text AS catatan
+       FROM public.rekam_medis rm
+       LEFT JOIN public.pendaftarans p ON p.id = rm.pendaftaran_id
+       LEFT JOIN public.users u ON u.id = rm.dokter_id
+       WHERE rm.pasien_id = $1 OR p.user_id = $1
+       ORDER BY rm.created_at DESC NULLS LAST, rm.id DESC`,
+      userId.toString(),
+    );
+
+    return rows.map((row) => ({
+      id: row.id,
+      tanggal: row.tanggal ? new Date(row.tanggal).toISOString() : null,
+      dokter: row.dokter ?? "Tidak diketahui",
+      diagnosa: row.diagnosa ?? "-",
+      tindakan: row.tindakan ?? "-",
+      catatan: row.catatan ?? null,
+    }));
+  } catch (error) {
+    console.error("[rekam-medis] fallback query failed:", error instanceof Error ? error.message : String(error));
+    return [];
+  }
+}
+
 export const getServerSideProps: GetServerSideProps<PageProps> = async (ctx) => {
   const auth = await requireAuth(ctx, { roles: ["pasien"] });
   if ("redirect" in auth) return auth;
 
-  const [unreadNotifCount, rekamMedisList] = await Promise.all([
-    safeUnreadNotifCount(auth.user.id),
-    prisma.rekamMedis.findMany({
-      where: {
-        pendaftaran: {
-          userId: auth.user.id,
-        },
-      },
-      include: {
-        dokter: true,
-      },
-      orderBy: { createdAt: "desc" },
-    }),
-  ]);
+  const [unreadNotifCount, rekamMedisList] = await Promise.all([safeUnreadNotifCount(auth.user.id), safeRekamMedisRows(auth.user.id)]);
 
   return {
     props: {
       user: toSessionUser(auth.user),
       unreadNotifCount,
-      rekamMedisList: rekamMedisList.map((rekam) => ({
-        id: rekam.id.toString(),
-        tanggal: rekam.createdAt ? rekam.createdAt.toISOString() : null,
-        dokter: rekam.dokter?.name ?? "Tidak diketahui",
-        diagnosa: rekam.diagnosa,
-        tindakan: rekam.tindakan,
-        catatan: rekam.catatan,
-      })),
+      rekamMedisList,
     },
   };
 };

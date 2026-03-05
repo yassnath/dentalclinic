@@ -29,14 +29,20 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (ctx) => 
   const auth = await requireAuth(ctx, { roles: ["pasien"] });
   if ("redirect" in auth) return auth;
 
-  const [unreadNotifCount, pendaftarans] = await Promise.all([
-    safeUnreadNotifCount(auth.user.id),
-    prisma.pendaftaran.findMany({
-      where: { userId: auth.user.id },
-      include: { dokter: true },
-      orderBy: { createdAt: "desc" },
-    }),
-  ]);
+  let unreadNotifCount = 0;
+  let pendaftarans: any[] = [];
+  try {
+    [unreadNotifCount, pendaftarans] = await Promise.all([
+      safeUnreadNotifCount(auth.user.id),
+      prisma.pendaftaran.findMany({
+        where: { userId: auth.user.id },
+        include: { dokter: true },
+        orderBy: { createdAt: "desc" },
+      }),
+    ]);
+  } catch (error) {
+    console.error("[pendaftaran-saya] failed to load data:", error instanceof Error ? error.message : String(error));
+  }
 
   return {
     props: {

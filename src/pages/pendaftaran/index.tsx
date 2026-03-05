@@ -98,85 +98,100 @@ export const getServerSideProps: GetServerSideProps<PendaftaranPageProps> = asyn
   const errors: string[] = [];
 
   if (ctx.req.method === "POST") {
-    const body = await parseFormBody(ctx.req);
-    selectedTanggal = body.tanggal_kunjungan ?? selectedTanggal;
-    selectedSpesialis = body.spesialis ?? selectedSpesialis;
+    try {
+      const body = await parseFormBody(ctx.req);
+      selectedTanggal = body.tanggal_kunjungan ?? selectedTanggal;
+      selectedSpesialis = body.spesialis ?? selectedSpesialis;
 
-    const parsed = schema.safeParse(body);
-    if (!parsed.success) {
-      errors.push(parsed.error.issues[0]?.message ?? "Input tidak valid.");
-    } else {
-      const data = parsed.data;
-      const alamatFinal = (data.alamat && data.alamat.trim()) || (auth.user.alamat?.trim() ?? "");
-      if (!alamatFinal) {
-        errors.push("Alamat wajib diisi atau lengkapi alamat di profil.");
+      const parsed = schema.safeParse(body);
+      if (!parsed.success) {
+        errors.push(parsed.error.issues[0]?.message ?? "Input tidak valid.");
       } else {
-        const dokterId = BigInt(data.dokter_id);
-        const dokter = await prisma.user.findFirst({
-          where: { id: dokterId, role: "dokter" },
-        });
-
-        if (!dokter) {
-          errors.push("Dokter tidak valid.");
-        } else if ((dokter.spesialis ?? "") !== data.spesialis) {
-          errors.push("Dokter yang dipilih tidak sesuai spesialis.");
+        const data = parsed.data;
+        const alamatFinal = (data.alamat && data.alamat.trim()) || (auth.user.alamat?.trim() ?? "");
+        if (!alamatFinal) {
+          errors.push("Alamat wajib diisi atau lengkapi alamat di profil.");
         } else {
-          const count = await countForDoctorOnDate(dokter.id, data.tanggal_kunjungan);
-          if (count >= 5) {
-            errors.push("Kuota dokter untuk tanggal tersebut sudah penuh (maksimal 5 pasien).");
+          const dokterId = BigInt(data.dokter_id);
+          const dokter = await prisma.user.findFirst({
+            where: { id: dokterId, role: "dokter" },
+          });
+
+          if (!dokter) {
+            errors.push("Dokter tidak valid.");
+          } else if ((dokter.spesialis ?? "") !== data.spesialis) {
+            errors.push("Dokter yang dipilih tidak sesuai spesialis.");
           } else {
-            const queue = await generateQueueForDoctorAndDate(dokter.id, data.tanggal_kunjungan);
-            const tanggalKunjungan = new Date(`${data.tanggal_kunjungan}T00:00:00`);
-            const jamKunjungan = new Date(`1970-01-01T${data.jam_kunjungan}:00`);
+            const count = await countForDoctorOnDate(dokter.id, data.tanggal_kunjungan);
+            if (count >= 5) {
+              errors.push("Kuota dokter untuk tanggal tersebut sudah penuh (maksimal 5 pasien).");
+            } else {
+              const queue = await generateQueueForDoctorAndDate(dokter.id, data.tanggal_kunjungan);
+              const tanggalKunjungan = new Date(`${data.tanggal_kunjungan}T00:00:00`);
+              const jamKunjungan = new Date(`1970-01-01T${data.jam_kunjungan}:00`);
 
-            const pendaftaran = await prisma.$transaction(async (tx) => {
-              const created = await tx.pendaftaran.create({
-                data: {
-                  userId: auth.user.id,
-                  dokterId: dokter.id,
-                  nama: data.nama,
-                  tanggalLahir: new Date(data.tanggal_lahir),
-                  jenisKelamin: data.jenis_kelamin,
-                  noHp: data.no_hp,
-                  nik: data.nik,
-                  keluhan: data.keluhan,
-                  tanggalKunjungan,
-                  jamKunjungan,
-                  spesialis: data.spesialis,
-                  nomorUrut: queue.nomor,
-                  kodeAntrian: queue.kode,
-                  status: "menunggu_konfirmasi",
-                },
+              const pendaftaran = await prisma.$transaction(async (tx) => {
+                const created = await tx.pendaftaran.create({
+                  data: {
+                    userId: auth.user.id,
+                    dokterId: dokter.id,
+                    nama: data.nama,
+                    tanggalLahir: new Date(data.tanggal_lahir),
+                    jenisKelamin: data.jenis_kelamin,
+                    noHp: data.no_hp,
+                    nik: data.nik,
+                    keluhan: data.keluhan,
+                    tanggalKunjungan,
+                    jamKunjungan,
+                    spesialis: data.spesialis,
+                    nomorUrut: queue.nomor,
+                    kodeAntrian: queue.kode,
+                    status: "menunggu_konfirmasi",
+                  },
+                });
+
+                await tx.notifikasi.create({
+                  data: {
+                    userId: auth.user.id,
+                    judul: "Pendaftaran Berhasil",
+                    pesan: `Pendaftaran berhasil dibuat. Nomor antrian Anda: ${queue.kode}.`,
+                    tipe: "pendaftaran",
+                    link: "/pendaftaran-saya",
+                    dibaca: false,
+                  },
+                });
+                return created;
               });
 
-              await tx.notifikasi.create({
-                data: {
-                  userId: auth.user.id,
-                  judul: "Pendaftaran Berhasil",
-                  pesan: `Pendaftaran berhasil dibuat. Nomor antrian Anda: ${queue.kode}.`,
-                  tipe: "pendaftaran",
-                  link: "/pendaftaran-saya",
-                  dibaca: false,
+              return {
+                redirect: {
+                  destination: `/pendaftaran?success=${encodeURIComponent("Pendaftaran berhasil dibuat.")}&antrian=${encodeURIComponent(
+                    pendaftaran.kodeAntrian ?? queue.kode,
+                  )}`,
+                  permanent: false,
                 },
-              });
-              return created;
-            });
-
-            return {
-              redirect: {
-                destination: `/pendaftaran?success=${encodeURIComponent("Pendaftaran berhasil dibuat.")}&antrian=${encodeURIComponent(
-                  pendaftaran.kodeAntrian ?? queue.kode,
-                )}`,
-                permanent: false,
-              },
-            };
+              };
+            }
           }
         }
       }
+    } catch (error) {
+      console.error("[pendaftaran] failed to process request:", error instanceof Error ? error.message : String(error));
+      errors.push("Pendaftaran gagal diproses. Silakan coba lagi.");
     }
   }
 
-  const data = await buildFormData(auth.user.id, selectedTanggal, selectedSpesialis);
+  let data: Awaited<ReturnType<typeof buildFormData>>;
+  try {
+    data = await buildFormData(auth.user.id, selectedTanggal, selectedSpesialis);
+  } catch (error) {
+    console.error("[pendaftaran] failed to load form data:", error instanceof Error ? error.message : String(error));
+    data = {
+      spesialisList: [],
+      dokters: [],
+      unreadNotifCount: 0,
+    };
+  }
 
   return {
     props: {

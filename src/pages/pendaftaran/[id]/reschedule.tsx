@@ -60,90 +60,102 @@ export const getServerSideProps: GetServerSideProps<RescheduleProps> = async (ct
   }
 
   if (ctx.req.method === "POST") {
-    const body = await parseFormBody(ctx.req);
-    const parsed = schema.safeParse(body);
-    if (!parsed.success) {
-      errors.push(parsed.error.issues[0]?.message ?? "Input tidak valid.");
-    } else {
-      const data = parsed.data;
-      const dokter = await prisma.user.findFirst({
-        where: {
-          id: BigInt(data.dokter_id),
-          role: "dokter",
-        },
-      });
-      if (!dokter) {
-        errors.push("Dokter tidak valid.");
-      } else if ((dokter.spesialis ?? "") !== data.spesialis) {
-        errors.push("Dokter yang dipilih tidak sesuai spesialis.");
+    try {
+      const body = await parseFormBody(ctx.req);
+      const parsed = schema.safeParse(body);
+      if (!parsed.success) {
+        errors.push(parsed.error.issues[0]?.message ?? "Input tidak valid.");
       } else {
-        const sameDate =
-          (pendaftaran.tanggalKunjungan ? toDateInputValue(pendaftaran.tanggalKunjungan) : "") === data.tanggal_kunjungan;
-        const sameDoctor = (pendaftaran.dokterId ?? BigInt(0)).toString() === dokter.id.toString();
-        if (!(sameDate && sameDoctor)) {
-          const count = await countForDoctorOnDate(dokter.id, data.tanggal_kunjungan);
-          if (count >= 5) {
-            errors.push("Kuota dokter untuk tanggal tersebut sudah penuh (maksimal 5 pasien).");
+        const data = parsed.data;
+        const dokter = await prisma.user.findFirst({
+          where: {
+            id: BigInt(data.dokter_id),
+            role: "dokter",
+          },
+        });
+        if (!dokter) {
+          errors.push("Dokter tidak valid.");
+        } else if ((dokter.spesialis ?? "") !== data.spesialis) {
+          errors.push("Dokter yang dipilih tidak sesuai spesialis.");
+        } else {
+          const sameDate =
+            (pendaftaran.tanggalKunjungan ? toDateInputValue(pendaftaran.tanggalKunjungan) : "") === data.tanggal_kunjungan;
+          const sameDoctor = (pendaftaran.dokterId ?? BigInt(0)).toString() === dokter.id.toString();
+          if (!(sameDate && sameDoctor)) {
+            const count = await countForDoctorOnDate(dokter.id, data.tanggal_kunjungan);
+            if (count >= 5) {
+              errors.push("Kuota dokter untuk tanggal tersebut sudah penuh (maksimal 5 pasien).");
+            }
+          }
+
+          if (errors.length === 0) {
+            const queue = await generateQueueForDoctorAndDate(dokter.id, data.tanggal_kunjungan);
+            const updated = await prisma.$transaction(async (tx) => {
+              const result = await tx.pendaftaran.update({
+                where: { id: pendaftaran.id },
+                data: {
+                  dokterId: dokter.id,
+                  tanggalKunjungan: new Date(`${data.tanggal_kunjungan}T00:00:00`),
+                  jamKunjungan: new Date(`1970-01-01T${data.jam_kunjungan}:00`),
+                  spesialis: data.spesialis,
+                  nomorUrut: queue.nomor,
+                  kodeAntrian: queue.kode,
+                  status: "menunggu_konfirmasi",
+                },
+              });
+              await tx.notifikasi.create({
+                data: {
+                  userId: auth.user.id,
+                  judul: "Reschedule Jadwal",
+                  pesan: `Jadwal berhasil direschedule. Nomor antrian baru Anda: ${result.kodeAntrian ?? queue.kode}.`,
+                  tipe: "pendaftaran",
+                  link: "/pendaftaran-saya",
+                  dibaca: false,
+                },
+              });
+              return result;
+            });
+
+            return {
+              redirect: {
+                destination: `/pendaftaran?success=${encodeURIComponent(
+                  "Reschedule berhasil. Nomor antrian otomatis diperbarui.",
+                )}&antrian=${encodeURIComponent(updated.kodeAntrian ?? queue.kode)}`,
+                permanent: false,
+              },
+            };
           }
         }
-
-        if (errors.length === 0) {
-          const queue = await generateQueueForDoctorAndDate(dokter.id, data.tanggal_kunjungan);
-          const updated = await prisma.$transaction(async (tx) => {
-            const result = await tx.pendaftaran.update({
-              where: { id: pendaftaran.id },
-              data: {
-                dokterId: dokter.id,
-                tanggalKunjungan: new Date(`${data.tanggal_kunjungan}T00:00:00`),
-                jamKunjungan: new Date(`1970-01-01T${data.jam_kunjungan}:00`),
-                spesialis: data.spesialis,
-                nomorUrut: queue.nomor,
-                kodeAntrian: queue.kode,
-                status: "menunggu_konfirmasi",
-              },
-            });
-            await tx.notifikasi.create({
-              data: {
-                userId: auth.user.id,
-                judul: "Reschedule Jadwal",
-                pesan: `Jadwal berhasil direschedule. Nomor antrian baru Anda: ${result.kodeAntrian ?? queue.kode}.`,
-                tipe: "pendaftaran",
-                link: "/pendaftaran-saya",
-                dibaca: false,
-              },
-            });
-            return result;
-          });
-
-          return {
-            redirect: {
-              destination: `/pendaftaran?success=${encodeURIComponent(
-                "Reschedule berhasil. Nomor antrian otomatis diperbarui.",
-              )}&antrian=${encodeURIComponent(updated.kodeAntrian ?? queue.kode)}`,
-              permanent: false,
-            },
-          };
-        }
       }
+    } catch (error) {
+      console.error("[pendaftaran/reschedule] failed to process request:", error instanceof Error ? error.message : String(error));
+      errors.push("Reschedule gagal diproses. Silakan coba lagi.");
     }
   }
 
-  const [spesialisListRows, doktersRows, unreadNotifCount] = await Promise.all([
-    prisma.user.findMany({
-      where: { role: "dokter", spesialis: { not: null } },
-      select: { spesialis: true },
-      distinct: ["spesialis"],
-      orderBy: { spesialis: "asc" },
-    }),
-    prisma.user.findMany({
-      where: {
-        role: "dokter",
-        spesialis: pendaftaran.spesialis,
-      },
-      orderBy: { name: "asc" },
-    }),
-    safeUnreadNotifCount(auth.user.id),
-  ]);
+  let spesialisListRows: Array<{ spesialis: string | null }> = [];
+  let doktersRows: Array<{ id: bigint; name: string; spesialis: string | null }> = [];
+  let unreadNotifCount = 0;
+  try {
+    [spesialisListRows, doktersRows, unreadNotifCount] = await Promise.all([
+      prisma.user.findMany({
+        where: { role: "dokter", spesialis: { not: null } },
+        select: { spesialis: true },
+        distinct: ["spesialis"],
+        orderBy: { spesialis: "asc" },
+      }),
+      prisma.user.findMany({
+        where: {
+          role: "dokter",
+          spesialis: pendaftaran.spesialis,
+        },
+        orderBy: { name: "asc" },
+      }),
+      safeUnreadNotifCount(auth.user.id),
+    ]);
+  } catch (error) {
+    console.error("[pendaftaran/reschedule] failed to load form data:", error instanceof Error ? error.message : String(error));
+  }
 
   return {
     props: {
