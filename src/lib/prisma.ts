@@ -70,12 +70,93 @@ if (process.env.DIRECT_URL) {
   process.env.DIRECT_URL = withSslMode(direct);
 }
 
-export const prisma =
+const rawPrisma =
   globalForPrisma.prisma ??
   new PrismaClient({
     log: process.env.NODE_ENV === "development" ? ["warn", "error"] : ["error"],
   });
 
 if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
+  globalForPrisma.prisma = rawPrisma;
 }
+
+const READ_METHODS = new Set([
+  "findUnique",
+  "findFirst",
+  "findMany",
+  "count",
+  "aggregate",
+  "groupBy",
+  "$queryRaw",
+  "$queryRawUnsafe",
+]);
+
+function aggregateFallback() {
+  return {
+    _sum: {},
+    _avg: {},
+    _min: {},
+    _max: {},
+    _count: 0,
+  };
+}
+
+function fallbackValueFor(method: string) {
+  if (method === "findMany" || method === "groupBy" || method === "$queryRaw" || method === "$queryRawUnsafe") return [];
+  if (method === "findUnique" || method === "findFirst") return null;
+  if (method === "count") return 0;
+  if (method === "aggregate") return aggregateFallback();
+  return null;
+}
+
+function withReadFailsafe<T extends object>(client: T): T {
+  return new Proxy(client, {
+    get(target, prop, receiver) {
+      const rootValue = Reflect.get(target, prop, receiver);
+      if (typeof rootValue === "function") {
+        const method = String(prop);
+        if (!READ_METHODS.has(method)) return rootValue.bind(target);
+        return async (...args: unknown[]) => {
+          try {
+            return await rootValue.apply(target, args);
+          } catch (error) {
+            console.error(`[prisma-failsafe] ${method} failed:`, error instanceof Error ? error.message : String(error));
+            return fallbackValueFor(method);
+          }
+        };
+      }
+
+      if (!rootValue || typeof rootValue !== "object") return rootValue;
+
+      return new Proxy(rootValue as object, {
+        get(delegateTarget, delegateProp, delegateReceiver) {
+          const delegateValue = Reflect.get(delegateTarget, delegateProp, delegateReceiver);
+          if (typeof delegateValue !== "function") return delegateValue;
+
+          const method = String(delegateProp);
+          if (!READ_METHODS.has(method)) return delegateValue.bind(delegateTarget);
+
+          return async (...args: unknown[]) => {
+            try {
+              return await delegateValue.apply(delegateTarget, args);
+            } catch (error) {
+              const delegateName = String(prop);
+              console.error(
+                `[prisma-failsafe] ${delegateName}.${method} failed:`,
+                error instanceof Error ? error.message : String(error),
+              );
+              return fallbackValueFor(method);
+            }
+          };
+        },
+      });
+    },
+  });
+}
+
+const failsafeFlag = (process.env.PRISMA_READ_FAILSAFE ?? "").trim().toLowerCase();
+const useReadFailsafe = failsafeFlag
+  ? failsafeFlag === "1" || failsafeFlag === "true" || failsafeFlag === "yes"
+  : process.env.NODE_ENV === "production";
+
+export const prisma = (useReadFailsafe ? withReadFailsafe(rawPrisma) : rawPrisma) as PrismaClient;

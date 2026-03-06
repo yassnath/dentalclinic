@@ -170,38 +170,39 @@ export default function DashboardLayout({
             </div>
           </div>
 
-          <nav className="dashboard-nav-grid" style={{ ["--sidebar-menu-count" as string]: String(menus.length + 1) }}>
-            {menus.map((menu) => {
-              const active = isMenuActive(menu.href, currentPath);
-              return (
-                <Link
-                  key={menu.href}
-                  href={menu.href}
-                  className={`dashboard-nav-link ${active ? "is-active" : ""}`}
-                  onClick={() => setOpen(false)}
-                >
-                  <span className="flex items-center gap-3">
-                    <span className="dashboard-nav-icon">
-                      <i className={`fas ${menu.icon}`} />
+          <nav className="dashboard-nav-grid">
+            <div className="dashboard-nav-list">
+              {menus.map((menu) => {
+                const active = isMenuActive(menu.href, currentPath);
+                return (
+                  <Link
+                    key={menu.href}
+                    href={menu.href}
+                    className={`dashboard-nav-link ${active ? "is-active" : ""}`}
+                    onClick={() => setOpen(false)}
+                  >
+                    <span className="flex items-center gap-3">
+                      <span className="dashboard-nav-icon">
+                        <i className={`fas ${menu.icon}`} />
+                      </span>
+                      <span className="dashboard-nav-label">{menu.label}</span>
                     </span>
-                    <span className="dashboard-nav-label">{menu.label}</span>
-                  </span>
-                  {menu.badge && menu.badge > 0 ? (
-                    <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-xs font-bold text-white">
-                      {menu.badge}
-                    </span>
-                  ) : null}
-                </Link>
-              );
-            })}
-
+                    {menu.badge && menu.badge > 0 ? (
+                      <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-xs font-bold text-white">
+                        {menu.badge}
+                      </span>
+                    ) : null}
+                  </Link>
+                );
+              })}
+            </div>
             <a
               href="/logout"
               data-confirm="Yakin ingin logout dari akun ini?"
               data-confirm-title="Konfirmasi Logout"
               data-confirm-confirm-label="Ya, Logout"
               data-confirm-tone="danger"
-              className="dashboard-nav-link"
+              className="dashboard-nav-link dashboard-nav-link-logout"
               onClick={() => setOpen(false)}
             >
               <span className="flex items-center gap-3">

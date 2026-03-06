@@ -892,25 +892,26 @@ table:is(.responsive-table, .theme-table) td {
 .dashboard-nav-grid {
   flex: 1 1 auto;
   min-height: 0;
-  display: grid;
-  grid-template-rows: repeat(var(--sidebar-menu-count, 9), minmax(0, 1fr));
-  gap: clamp(0.22rem, 0.44vh, 0.46rem) !important;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.5rem, 1vh, 0.8rem) !important;
   margin-top: 0 !important;
 }
 
-.dashboard-nav-grid > * {
-  min-height: 0;
+.dashboard-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.22rem, 0.44vh, 0.46rem);
 }
 
 .dashboard-nav-link {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 100%;
-  min-height: 0;
+  min-height: clamp(2.85rem, 5.1vh, 3.3rem);
   border-radius: clamp(10px, 1.4vh, 14px);
   border: 1px solid transparent;
-  padding-block: clamp(0.2rem, 0.42vh, 0.48rem);
+  padding-block: clamp(0.42rem, 0.7vh, 0.6rem);
   padding-inline: clamp(0.42rem, 0.85vw, 0.72rem);
   color: var(--text-secondary);
   transition:
@@ -919,6 +920,10 @@ table:is(.responsive-table, .theme-table) td {
     color 0.22s ease,
     transform 0.22s ease,
     box-shadow 0.22s ease;
+}
+
+.dashboard-nav-link-logout {
+  margin-top: auto;
 }
 
 .dashboard-nav-link:hover {
@@ -1469,9 +1474,14 @@ table:is(.responsive-table, .theme-table) td {
     gap: 0.24rem !important;
   }
 
+  .dashboard-nav-list {
+    gap: 0.24rem;
+  }
+
   .dashboard-nav-grid .dashboard-nav-link {
+    min-height: 2.7rem;
     padding-inline: 0.5rem;
-    padding-block: 0.18rem;
+    padding-block: 0.22rem;
     border-radius: 11px;
   }
 

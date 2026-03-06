@@ -324,7 +324,7 @@ export default function HomePage() {
           <div className="landing-grid pointer-events-none absolute inset-0 opacity-60" style={{ backgroundImage: "linear-gradient(color-mix(in srgb, var(--border-color) 35%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--border-color) 35%, transparent) 1px, transparent 1px)", backgroundSize: "34px 34px" }} />
           <div className="relative z-10 mx-auto grid max-w-7xl items-start gap-10 px-6 pb-16 pt-4 md:grid-cols-2 md:pb-20 md:pt-7">
             <div data-reveal>
-              <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
+              <span className="mb-3 mt-2 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-blue-700 md:mt-3">
                 <i className="fas fa-shield-heart" />
                 Sistem Klinik Terintegrasi
               </span>
@@ -366,8 +366,8 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="relative mx-auto w-full max-w-xl md:max-w-[30rem] lg:max-w-[31rem]" data-reveal>
-              <div className="landing-panel relative overflow-hidden rounded-[2rem] border border-soft bg-white p-2.5 shadow-2xl shadow-blue-500/20 sm:p-3 md:p-3.5">
+            <div className="relative mx-auto w-full max-w-xl md:max-w-[29rem] lg:max-w-[30rem]" data-reveal>
+              <div className="landing-panel relative overflow-hidden rounded-[2rem] border border-soft bg-white p-2.5 shadow-2xl shadow-blue-500/20 sm:p-3 md:p-3">
                 <div className="mb-2.5 flex items-center justify-between rounded-xl border border-soft bg-blue-50 px-3 py-2 md:px-3.5">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">Dashboard Ringkas</p>
@@ -380,17 +380,17 @@ export default function HomePage() {
                   alt="Ilustrasi Klinik"
                   width={640}
                   height={640}
-                  className="mx-auto w-full max-w-[19rem] sm:max-w-[21rem] md:max-w-[22rem] lg:max-w-[23rem]"
+                  className="mx-auto w-full max-w-[17.75rem] sm:max-w-[19rem] md:max-w-[20rem] lg:max-w-[21rem]"
                   priority
                 />
               </div>
 
-              <div className="landing-float-card absolute -left-5 top-6 hidden w-44 rounded-2xl border border-soft bg-white p-4 shadow-lg md:block" data-reveal>
+              <div className="landing-float-card absolute -left-6 top-20 hidden w-44 rounded-2xl border border-soft bg-white p-4 shadow-lg md:block lg:-left-7 lg:top-24" data-reveal>
                 <p className="text-xs font-semibold uppercase tracking-wide text-green-700">Check-in</p>
                 <p className="mt-1 text-sm font-semibold text-secondary">15 pasien sudah hadir</p>
               </div>
 
-              <div className="landing-float-card absolute bottom-3 right-2 hidden w-48 rounded-2xl border border-soft bg-white p-4 shadow-lg md:block" data-reveal>
+              <div className="landing-float-card absolute -right-6 bottom-2 hidden w-48 rounded-2xl border border-soft bg-white p-4 shadow-lg md:block lg:-right-7 lg:bottom-3" data-reveal>
                 <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">Notifikasi</p>
                 <p className="mt-1 text-sm font-semibold text-secondary">8 update antrian masuk</p>
               </div>
@@ -656,6 +656,26 @@ export default function HomePage() {
             opacity: 0.42;
           }
 
+          .landing-cta {
+            border-color: color-mix(in srgb, var(--primary-main) 28%, var(--border-color)) !important;
+            background:
+              radial-gradient(circle at 12% 14%, color-mix(in srgb, white 18%, transparent) 0%, transparent 28%),
+              radial-gradient(circle at 88% 84%, color-mix(in srgb, var(--secondary-main) 22%, transparent) 0%, transparent 32%),
+              linear-gradient(135deg, color-mix(in srgb, var(--primary-dark) 94%, #08111f) 0%, color-mix(in srgb, var(--primary-main) 92%, white) 100%) !important;
+            color: #fff !important;
+            box-shadow:
+              0 24px 48px color-mix(in srgb, var(--primary-main) 24%, transparent),
+              inset 0 1px 0 rgba(255, 255, 255, 0.18);
+          }
+
+          .landing-cta h3 {
+            color: #fff !important;
+          }
+
+          .landing-cta p {
+            color: rgba(255, 255, 255, 0.9) !important;
+          }
+
           .ai-chat-trigger {
             position: relative;
             display: inline-flex;
@@ -790,6 +810,10 @@ export default function HomePage() {
           }
 
           [data-theme="dark"] .landing-cta {
+            background:
+              radial-gradient(circle at 12% 14%, color-mix(in srgb, white 8%, transparent) 0%, transparent 26%),
+              radial-gradient(circle at 88% 84%, color-mix(in srgb, var(--secondary-main) 18%, transparent) 0%, transparent 30%),
+              linear-gradient(135deg, color-mix(in srgb, var(--primary-dark) 88%, #02050b) 0%, color-mix(in srgb, var(--primary-main) 72%, #08111f) 100%) !important;
             border-color: color-mix(in srgb, var(--primary-light) 44%, transparent) !important;
             box-shadow: 0 22px 38px rgba(0, 0, 0, 0.5) !important;
           }
