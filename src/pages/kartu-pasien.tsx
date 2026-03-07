@@ -1,8 +1,9 @@
 import type { GetServerSideProps } from "next";
 import { randomUUID } from "crypto";
 import DashboardLayout from "@/components/DashboardLayout";
-import { requireAuth } from "@/lib/auth";
+import { createSessionCookie, createSessionPayloadFromUser, requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getPatientQrUrl } from "@/lib/qr";
 import { safeUnreadNotifCount } from "@/lib/notifications";
 import { toSessionUser, type SessionUser } from "@/lib/user-props";
 
@@ -13,8 +14,7 @@ type PageProps = {
 };
 
 function resolveQrUrl(user: SessionUser) {
-  if (!user.qr_token) return null;
-  return `/api/qr/pasien/${user.qr_token}`;
+  return getPatientQrUrl(user.qr_token);
 }
 
 export const getServerSideProps: GetServerSideProps<PageProps> = async (ctx) => {
@@ -36,6 +36,7 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (ctx) => 
         where: { id: auth.user.id },
         data: updates,
       });
+      await createSessionCookie(ctx.res, createSessionPayloadFromUser(currentUser));
     } catch (error) {
       // Jangan buat halaman gagal total jika sinkronisasi field tambahan user tidak tersedia.
       console.error("[kartu-pasien] failed to update patient card fields:", error instanceof Error ? error.message : String(error));
@@ -79,10 +80,6 @@ export default function KartuPasienPage({ user, unreadNotifCount, qrUrl }: PageP
               <div className="font-semibold">{user.name}</div>
               <div className="mt-2 text-xs text-gray-500">No. RM</div>
               <div className="font-semibold tracking-wide">{user.no_rm ?? "-"}</div>
-              <div className="mt-2 text-xs text-gray-500">Username</div>
-              <div className="font-semibold">{user.username ?? "-"}</div>
-              <div className="mt-2 text-xs text-gray-500">Alamat</div>
-              <div className="font-semibold">{user.alamat ?? "-"}</div>
             </div>
 
             <div className="flex items-center justify-center">{qrUrl ? <img id="qrImage" src={qrUrl} alt="QR Pasien" className="h-32 w-32" /> : null}</div>

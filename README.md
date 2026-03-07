@@ -31,6 +31,14 @@ The platform unifies the full clinic service journey: patient registration, doct
 - **Notification Center**
   - Real-time status updates to keep clinic teams and patients synchronized.
 
+- **Patient Self-Service Settings**
+  - Patients can update dashboard language, username, and password from their own settings page.
+
+- **Patient Card and QR Workflow**
+  - Patient cards are simplified around core identity details: **Name** and **Medical Record Number (No. RM)**.
+  - Patient QR images are served through a resilient endpoint with runtime fallback generation.
+  - Receptionist-side scanning accepts QR URLs and raw tokens more reliably in production deployments.
+
 - **AI Customer Support Widget**
   - Fast first-response assistant for common user questions.
 
@@ -61,6 +69,11 @@ The platform unifies the full clinic service journey: patient registration, doct
 - Clinics moving from manual workflows to an integrated digital system.
 - Operations teams that need cleaner, near real-time data control.
 - Healthcare services aiming to deliver a more modern patient experience.
+
+## Deployment Notes
+
+- Set `APP_URL` in production to the public application URL so generated QR codes always point to the correct patient scan page.
+- If `APP_URL` is not set, the app now falls back to forwarded host/protocol headers when generating patient scan QR codes.
 
 ## Product Vision
 

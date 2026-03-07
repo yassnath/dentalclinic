@@ -2,6 +2,7 @@ import Head from "next/head";
 import type { GetServerSideProps } from "next";
 import { prisma } from "@/lib/prisma";
 import { formatDate, formatDateTime } from "@/lib/format";
+import { getPatientQrUrl } from "@/lib/qr";
 
 type ChainDetail = {
   chain_index: number;
@@ -161,7 +162,17 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
 };
 
 export default function ScanPasienPage({ pasien, pendaftarans, rekamMedisList, chain }: Props) {
-  const qrSrc = pasien.qr_path ? `/${pasien.qr_path.replace(/^\/+/, "")}` : pasien.qr_token ? `/patient_qr/${pasien.qr_token}.png` : null;
+  const qrCandidates = Array.from(
+    new Set(
+      [
+        getPatientQrUrl(pasien.qr_token),
+        pasien.qr_path ? `/${pasien.qr_path.replace(/^\/+/, "")}` : null,
+        pasien.qr_path ? `/storage/${pasien.qr_path.replace(/^\/+/, "")}` : null,
+        pasien.qr_token ? `/patient_qr/${encodeURIComponent(pasien.qr_token)}.png` : null,
+      ].filter((value): value is string => Boolean(value)),
+    ),
+  );
+  const qrSrc = qrCandidates[0] ?? null;
 
   return (
     <>
@@ -193,7 +204,24 @@ export default function ScanPasienPage({ pasien, pendaftarans, rekamMedisList, c
               <div className="font-semibold">{pasien.alamat ?? "-"}</div>
             </div>
 
-            <div className="flex items-center justify-center">{qrSrc ? <img src={qrSrc} alt="QR Pasien" className="h-32 w-32" /> : null}</div>
+            <div className="flex items-center justify-center">
+              {qrSrc ? (
+                <img
+                  src={qrSrc}
+                  alt="QR Pasien"
+                  className="h-32 w-32"
+                  data-idx="0"
+                  onError={(event) => {
+                    const img = event.currentTarget;
+                    const current = Number(img.getAttribute("data-idx") ?? "0");
+                    const next = qrCandidates[current + 1];
+                    if (!next) return;
+                    img.setAttribute("data-idx", String(current + 1));
+                    img.src = next;
+                  }}
+                />
+              ) : null}
+            </div>
           </div>
 
           <div className="no-print mt-6 flex items-center justify-between">
@@ -228,7 +256,24 @@ export default function ScanPasienPage({ pasien, pendaftarans, rekamMedisList, c
                 <span className="text-sm text-gray-500">Alamat:</span> <strong>{pasien.alamat ?? "-"}</strong>
               </div>
             </div>
-            <div className="text-right">{qrSrc ? <img src={qrSrc} className="inline-block h-28 w-28" alt="QR" /> : null}</div>
+            <div className="text-right">
+              {qrSrc ? (
+                <img
+                  src={qrSrc}
+                  className="inline-block h-28 w-28"
+                  alt="QR"
+                  data-idx="0"
+                  onError={(event) => {
+                    const img = event.currentTarget;
+                    const current = Number(img.getAttribute("data-idx") ?? "0");
+                    const next = qrCandidates[current + 1];
+                    if (!next) return;
+                    img.setAttribute("data-idx", String(current + 1));
+                    img.src = next;
+                  }}
+                />
+              ) : null}
+            </div>
           </div>
 
           <hr className="my-6" />

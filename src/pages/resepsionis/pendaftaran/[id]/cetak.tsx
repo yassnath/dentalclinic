@@ -2,6 +2,7 @@ import Head from "next/head";
 import type { GetServerSideProps } from "next";
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getPatientQrUrl } from "@/lib/qr";
 
 type Props = {
   nama: string;
@@ -33,6 +34,10 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
 
   const user = pendaftaran.user;
   const qrCandidates = new Set<string>();
+  if (user?.qrToken) {
+    const apiQr = getPatientQrUrl(user.qrToken);
+    if (apiQr) qrCandidates.add(apiQr);
+  }
   if (user?.qrPath) {
     qrCandidates.add(`/${user.qrPath.replace(/^\/+/, "")}`);
     qrCandidates.add(`/storage/${user.qrPath.replace(/^\/+/, "")}`);

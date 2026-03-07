@@ -9,6 +9,7 @@ import PasswordInput from "@/components/PasswordInput";
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { parseFormBody } from "@/lib/http";
+import { buildPatientScanUrl } from "@/lib/qr";
 import { toSessionUser, type SessionUser } from "@/lib/user-props";
 
 const schema = z.object({
@@ -56,13 +57,6 @@ function emptyValues(): FormValues {
     keluhan: "",
     password: "",
   };
-}
-
-function baseUrlFromReq(headers: Record<string, string | string[] | undefined>) {
-  const host = typeof headers.host === "string" ? headers.host : "localhost:3000";
-  const protoHeader = headers["x-forwarded-proto"];
-  const proto = typeof protoHeader === "string" ? protoHeader : "http";
-  return `${proto}://${host}`;
 }
 
 function ymd(date = new Date()) {
@@ -131,8 +125,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
 
           const publicDir = path.join(process.cwd(), "public", "patient_qr");
           await fs.mkdir(publicDir, { recursive: true });
-          const scanBase = process.env.APP_URL ?? baseUrlFromReq(ctx.req.headers);
-          const scanUrl = `${scanBase}/scan/pasien/${qrToken}`;
+          const scanUrl = buildPatientScanUrl(qrToken, ctx.req.headers);
           const png = await QRCode.toBuffer(scanUrl, { type: "png", width: 250, margin: 1 });
           await fs.writeFile(path.join(publicDir, `${qrToken}.png`), png);
 

@@ -4,12 +4,7 @@ import QRCode from "qrcode";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getApiUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-
-function baseUrl(req: NextApiRequest) {
-  const host = req.headers.host ?? "localhost:3000";
-  const proto = typeof req.headers["x-forwarded-proto"] === "string" ? req.headers["x-forwarded-proto"] : "http";
-  return `${proto}://${host}`;
-}
+import { buildPatientScanUrl } from "@/lib/qr";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET") {
@@ -52,7 +47,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
   }
 
-  const scanUrl = `${process.env.APP_URL ?? baseUrl(req)}/scan/pasien/${pasien.qrToken}`;
+  const scanUrl = buildPatientScanUrl(pasien.qrToken, req.headers);
   const png = await QRCode.toBuffer(scanUrl, { type: "png", width: 250, margin: 1 });
   res.setHeader("Content-Type", "image/png");
   res.setHeader("Cache-Control", "public, max-age=3600");

@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import { useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import PasswordInput from "@/components/PasswordInput";
-import { requireAuth } from "@/lib/auth";
+import { createSessionCookie, createSessionPayloadFromUser, requireAuth } from "@/lib/auth";
 import { parseFormBody } from "@/lib/http";
 import { createLanguageCookie, getLanguageFromRequest, normalizeLanguage, appendSetCookie, type AppLanguage } from "@/lib/language";
 import { prisma } from "@/lib/prisma";
@@ -17,6 +17,10 @@ type Props = {
   success?: string;
   error?: string;
 };
+
+function normalizeUsername(value: unknown) {
+  return String(value ?? "").trim();
+}
 
 export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   const auth = await requireAuth(ctx, { roles: ["pasien"] });
@@ -59,16 +63,27 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
         };
       }
 
+      const username = normalizeUsername(body.username ?? dbUser.username);
       const currentPassword = String(body.current_password ?? "");
       const newPassword = String(body.new_password ?? "");
       const confirmPassword = String(body.confirm_password ?? "");
 
       const wantsPasswordChange = newPassword.length > 0 || confirmPassword.length > 0;
+      const usernameChanged = username.length > 0 && username !== dbUser.username;
 
-      if (!wantsPasswordChange) {
+      if (!usernameChanged && !wantsPasswordChange) {
         return {
           redirect: {
             destination: "/pasien/pengaturan?error=Tidak%20ada%20perubahan%20yang%20disimpan.",
+            permanent: false,
+          },
+        };
+      }
+
+      if (username.length < 3 || username.length > 50) {
+        return {
+          redirect: {
+            destination: "/pasien/pengaturan?error=Username%20harus%203-50%20karakter.",
             permanent: false,
           },
         };
@@ -102,10 +117,33 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
         }
       }
 
-      await prisma.user.update({
+      if (usernameChanged) {
+        const duplicate = await prisma.user.findFirst({
+          where: {
+            username,
+            id: { not: dbUser.id },
+          },
+          select: { id: true },
+        });
+
+        if (duplicate) {
+          return {
+            redirect: {
+              destination: "/pasien/pengaturan?error=Username%20sudah%20dipakai.%20Gunakan%20username%20lain.",
+              permanent: false,
+            },
+          };
+        }
+      }
+
+      const updatedUser = await prisma.user.update({
         where: { id: dbUser.id },
-        data: { password: await bcrypt.hash(newPassword, 10) },
+        data: {
+          ...(usernameChanged ? { username } : {}),
+          ...(wantsPasswordChange ? { password: await bcrypt.hash(newPassword, 10) } : {}),
+        },
       });
+      await createSessionCookie(ctx.res, createSessionPayloadFromUser(updatedUser));
 
       return {
         redirect: {
@@ -169,8 +207,8 @@ export default function PasienPengaturanPage({ user, unreadNotifCount, language,
           <h2 className="mb-2 text-xl font-bold text-secondary">{isEn ? "Account Security" : "Keamanan Akun"}</h2>
           <p className="mb-4 text-sm" style={{ color: "var(--text-70)" }}>
             {isEn
-              ? "Update your password. Enter current password to validate changes."
-              : "Perbarui password akun Anda. Masukkan password saat ini untuk validasi perubahan."}
+              ? "Update your username or password. Enter your current password to validate changes."
+              : "Perbarui username atau password akun Anda. Masukkan password saat ini untuk validasi perubahan."}
           </p>
 
           <form
@@ -182,6 +220,20 @@ export default function PasienPengaturanPage({ user, unreadNotifCount, language,
             data-confirm-confirm-label={isEn ? "Save" : "Simpan"}
           >
             <input type="hidden" name="action" value="account" />
+
+            <div className="sm:col-span-2">
+              <label className="mb-1 block text-sm font-semibold">{isEn ? "Username" : "Username"}</label>
+              <input
+                type="text"
+                name="username"
+                defaultValue={user.username}
+                minLength={3}
+                maxLength={50}
+                className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm"
+                placeholder={isEn ? "Choose a unique username" : "Pilih username yang unik"}
+                required
+              />
+            </div>
 
             <div className="sm:col-span-2">
               <label className="mb-1 block text-sm font-semibold">{isEn ? "Current Password" : "Password Saat Ini"}</label>
