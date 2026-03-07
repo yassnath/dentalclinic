@@ -7,7 +7,7 @@
     "dev:plain": "next dev",
     "dev:webpack": "next dev --webpack",
     "warmup:routes": "node scripts/warmup-routes.mjs",
-    "build": "next build",
+    "build": "node scripts/build.mjs",
     "start": "next start",
     "lint": "eslint",
     "prisma:generate": "prisma generate",

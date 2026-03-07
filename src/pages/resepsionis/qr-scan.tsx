@@ -1,9 +1,10 @@
 import Script from "next/script";
+import type { FormEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import type { GetServerSideProps } from "next";
+import { useRouter } from "next/router";
 import DashboardLayout from "@/components/DashboardLayout";
 import { requireAuth } from "@/lib/auth";
-import { parseFormBody } from "@/lib/http";
 import { toSessionUser, type SessionUser } from "@/lib/user-props";
 
 type Props = {
@@ -11,8 +12,8 @@ type Props = {
 };
 
 function normalizeToken(token: string) {
-  let value = String(token).trim().replace(/\s+/g, "");
-  value = value.split("?")[0]?.split("#")[0] ?? "";
+  let value = String(token).replace(/[\u200B-\u200D\uFEFF]/g, "").trim().replace(/\s+/g, "");
+  value = value.replace(/^['"`]+|['"`]+$/g, "");
   value = value.replace(/:\d+$/g, "");
   value = value.replace(/[^a-zA-Z0-9-]/g, "");
   return value;
@@ -20,14 +21,21 @@ function normalizeToken(token: string) {
 
 function extractToken(rawValue: string) {
   if (!rawValue) return "";
-  const raw = String(rawValue).trim();
-  const direct = raw.match(/\/scan\/pasien\/([a-zA-Z0-9-]+)/);
+  const raw = String(rawValue).replace(/[\u200B-\u200D\uFEFF]/g, "").trim();
+  const direct = raw.match(/\/scan\/pasien\/([a-zA-Z0-9-]+)/i);
   if (direct?.[1]) return normalizeToken(direct[1]);
 
-  if (!raw.includes("/")) return normalizeToken(raw);
+  const embeddedUrl = raw.match(/https?:\/\/[^\s]+/i)?.[0] ?? raw;
+  if (!embeddedUrl.includes("/")) return normalizeToken(embeddedUrl);
 
   try {
-    const url = new URL(raw);
+    const url = new URL(embeddedUrl);
+    const tokenParam =
+      url.searchParams.get("token") ||
+      url.searchParams.get("qr") ||
+      url.searchParams.get("value") ||
+      url.searchParams.get("id");
+    if (tokenParam) return normalizeToken(tokenParam);
     const parts = url.pathname.split("/").filter(Boolean);
     return normalizeToken(parts[parts.length - 1] ?? "");
   } catch {
@@ -40,27 +48,6 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   const auth = await requireAuth(ctx, { roles: ["resepsionis"] });
   if ("redirect" in auth) return auth;
 
-  if (ctx.req.method === "POST") {
-    const body = await parseFormBody(ctx.req);
-    const input = String(body.qr_input ?? "");
-    const token = extractToken(input);
-    if (!token) {
-      return {
-        redirect: {
-          destination: "/resepsionis/qr-scan",
-          permanent: false,
-        },
-      };
-    }
-
-    return {
-      redirect: {
-        destination: `/scan/pasien/${encodeURIComponent(token)}`,
-        permanent: false,
-      },
-    };
-  }
-
   return {
     props: {
       user: toSessionUser(auth.user),
@@ -69,10 +56,13 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
 };
 
 export default function ResepsionisQrScanPage({ user }: Props) {
+  const router = useRouter();
   const [status, setStatus] = useState("Siap");
   const [result, setResult] = useState("-");
+  const [qrInput, setQrInput] = useState("");
   const [cameraReady, setCameraReady] = useState(false);
   const [running, setRunning] = useState(false);
+  const [processing, setProcessing] = useState(false);
   const scannerRef = useRef<any>(null);
 
   useEffect(() => {
@@ -83,15 +73,42 @@ export default function ResepsionisQrScanPage({ user }: Props) {
     };
   }, []);
 
-  const goToScan = (decodedText: string) => {
-    setResult(decodedText);
-    const token = extractToken(decodedText);
+  const processQrValue = async (rawValue: string) => {
+    const source = String(rawValue ?? "").trim();
+    setResult(source || "-");
+    setQrInput(source);
+
+    const token = extractToken(source);
     if (!token) {
+      setProcessing(false);
       setStatus("Gagal: token tidak valid / tidak ditemukan");
+      return false;
+    }
+
+    setProcessing(true);
+    setStatus("QR valid. Membuka data pasien...");
+    try {
+      const moved = await router.push(`/scan/pasien/${encodeURIComponent(token)}`);
+      if (moved) return true;
+      setStatus("Gagal membuka halaman pasien.");
+      setProcessing(false);
+      return false;
+    } catch {
+      setStatus("Gagal membuka halaman pasien.");
+      setProcessing(false);
+      return false;
+    }
+  };
+
+  const handleDecodedValue = async (decodedText: string, sourceLabel: string) => {
+    const value = String(decodedText ?? "").trim();
+    if (!value) {
+      setStatus(`Gagal: hasil ${sourceLabel.toLowerCase()} kosong.`);
       return;
     }
-    setStatus("Berhasil terbaca. Mengalihkan...");
-    window.location.href = `/scan/pasien/${encodeURIComponent(token)}`;
+
+    setStatus(`${sourceLabel} berhasil dibaca. Memproses...`);
+    await processQrValue(value);
   };
 
   const startScan = async () => {
@@ -126,28 +143,35 @@ export default function ResepsionisQrScanPage({ user }: Props) {
         },
         async (decodedText: string) => {
           await stopScan(true);
-          goToScan(decodedText);
+          await handleDecodedValue(decodedText, "QR kamera");
         },
         () => undefined,
       );
       setRunning(true);
       setStatus("Kamera aktif. Arahkan QR ke kotak.");
     } catch {
+      scannerRef.current = null;
+      setRunning(false);
       setStatus("Gagal memulai kamera. Cek permission.");
     }
   };
 
   const stopScan = async (silent = false) => {
-    if (!scannerRef.current || !running) {
+    if (!scannerRef.current) {
       if (!silent) setStatus("Kamera belum berjalan");
       return;
     }
     try {
-      await scannerRef.current.stop();
-      await scannerRef.current.clear();
+      if (running && typeof scannerRef.current.stop === "function") {
+        await scannerRef.current.stop();
+      }
+      if (typeof scannerRef.current.clear === "function") {
+        await scannerRef.current.clear();
+      }
     } catch {
       // noop
     }
+    scannerRef.current = null;
     setRunning(false);
     if (!silent) setStatus("Kamera berhenti");
   };
@@ -174,10 +198,16 @@ export default function ResepsionisQrScanPage({ user }: Props) {
       const fileScanner = new win.Html5Qrcode("reader");
       const decoded = await fileScanner.scanFile(file, true);
       await fileScanner.clear().catch(() => undefined);
-      goToScan(decoded);
+      await handleDecodedValue(decoded, "File QR");
     } catch {
       setStatus("Gagal decode dari gambar (QR tidak terbaca).");
     }
+  };
+
+  const submitManualProcess = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (processing) return;
+    await processQrValue(qrInput);
   };
 
   return (
@@ -249,7 +279,7 @@ export default function ResepsionisQrScanPage({ user }: Props) {
                 Decode dari Gambar
               </button>
 
-              <form method="POST" action="/resepsionis/qr-scan" className="mt-4 border-t pt-4">
+              <form onSubmit={submitManualProcess} className="mt-4 border-t pt-4">
                 <label htmlFor="qr_input" className="mb-1 block text-xs font-semibold text-gray-700">
                   Atau tempel token/URL QR
                 </label>
@@ -257,14 +287,17 @@ export default function ResepsionisQrScanPage({ user }: Props) {
                   type="text"
                   id="qr_input"
                   name="qr_input"
+                  value={qrInput}
+                  onChange={(event) => setQrInput(event.target.value)}
                   className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
                   placeholder="Token atau URL scan pasien"
                 />
                 <button
                   type="submit"
-                  className="mt-2 rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700"
+                  disabled={processing}
+                  className="mt-2 rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  Proses
+                  {processing ? "Memproses..." : "Proses"}
                 </button>
               </form>
             </div>

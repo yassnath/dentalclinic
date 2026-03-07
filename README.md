@@ -1,80 +1,108 @@
 # Klinik HealthEase
 
-**Klinik HealthEase** is a modern clinic information platform built to make daily operations faster, cleaner, and more connected in one integrated website.
+**Klinik HealthEase** is an integrated clinic management system designed to transform fragmented daily operations into one fast, modern, and connected service experience.
 
-The platform unifies the full clinic service journey: patient registration, doctor scheduling, digital medical records, billing, notifications, and first-line communication through an AI assistant.
+It helps clinics run patient journeys with more structure, stronger visibility, and better service quality, from the front desk to consultation rooms and administrative workflows.
 
-## What This Website Delivers
+## What HealthEase Delivers
 
-- A unified digital ecosystem for front office teams, doctors, administrators, and patients.
-- A streamlined workflow that reduces repetitive manual steps.
-- A modern, responsive user experience across desktop and mobile.
+HealthEase brings the essential pillars of clinic operations into one digital ecosystem:
+
+- patient registration
+- doctor scheduling
+- receptionist queue handling
+- digital medical records
+- billing and payment monitoring
+- patient notifications
+- role-based dashboards
+- QR-based patient identity cards
+
+The result is a clinic platform that reduces manual friction, accelerates service flow, and gives every role a clearer view of what needs to happen next.
+
+## Why This System Matters
+
+Traditional clinic workflows often depend on scattered notes, repetitive data entry, disconnected communication, and slow administrative handoffs. HealthEase is built to remove those bottlenecks.
+
+With one connected platform, clinics can:
+
+- serve patients faster
+- reduce operational mistakes
+- improve staff coordination
+- keep medical and administrative data organized
+- create a more professional patient experience
 
 ## Core Features
 
-- **Role-Based Dashboards**
-  - Dedicated interfaces for **Admin**, **Doctor**, **Receptionist**, and **Patient** roles.
+### Role-Based Experience
 
-- **Digital Patient Registration**
-  - Registration forms aligned with Indonesian ID card (KTP) fields.
-  - **Camera-based KTP OCR autofill** to populate key fields automatically.
+Each role gets a dedicated workspace built for its responsibilities:
 
-- **Queue, Schedule, and Visit Management**
-  - End-to-end handling for patient visits, doctor schedules, active queue status, and check-in flow.
+- **Admin** for overall management, billing control, reports, and data oversight
+- **Doctor** for schedules, patient queues, and medical record actions
+- **Receptionist** for new patient intake, QR scanning, queue flow, and visit support
+- **Patient** for self-service access to schedules, records, billing, settings, and patient card
 
-- **Electronic Medical Records**
-  - Structured and role-aware medical record management for better traceability.
+### Smart Patient Registration
 
-- **Billing and Payment Operations**
-  - Billing creation and payment confirmation to simplify clinic administration.
+HealthEase simplifies registration with a structured patient intake flow aligned with real clinic needs. It also supports camera-assisted OCR input for Indonesian identity card fields, reducing manual typing and helping staff register patients faster.
 
-- **Notification Center**
-  - Real-time status updates to keep clinic teams and patients synchronized.
+### QR-Based Patient Card
 
-- **Patient Self-Service Settings**
-  - Patients can update dashboard language, username, and password from their own settings page.
+Every patient can have a digital card with a QR identity layer, making patient verification and front-desk handling more practical, faster, and easier to scale.
 
-- **Patient Card and QR Workflow**
-  - Patient cards are simplified around core identity details: **Name** and **Medical Record Number (No. RM)**.
-  - Patient QR images are served through a resilient endpoint with runtime fallback generation.
-  - Receptionist-side scanning accepts QR URLs and raw tokens more reliably in production deployments.
+### Queue and Visit Management
 
-- **AI Customer Support Widget**
-  - Fast first-response assistant for common user questions.
+From waiting lists to check-in status and visit progression, HealthEase helps clinics keep service flow visible and controlled in real time.
 
-- **Modern UI System**
-  - Global Light/Dark theme toggle across landing, auth, and role pages.
-  - Consistent validation and confirmation popup patterns.
-  - Responsive layouts optimized for mobile interaction.
+### Digital Medical Records
 
-## Why HealthEase Stands Out
+Doctors can manage structured medical records inside the same system, creating a cleaner and more reliable clinical history for follow-up care.
 
-- **End-to-End Clinic Workflow**
-  - Core clinic processes run in one connected platform.
+### Billing and Payment Workflow
 
-- **Operational Efficiency**
-  - Less admin bottleneck, faster team execution.
+Billing creation, payment proof handling, and confirmation status are brought into one operational flow so clinics can reduce administrative confusion and improve traceability.
 
-- **Better Patient Experience**
-  - Clearer service flow from registration to follow-up.
+### Notification Center
 
-- **Scalable Foundation**
-  - Built on a modern architecture for long-term feature expansion.
+Important updates can be surfaced directly inside the platform, helping staff and patients stay informed without relying on fragmented communication.
 
-- **Consistent Product Experience**
-  - Unified visual language and interaction patterns across modules.
+### Patient Self-Service Settings
 
-## Ideal For
+Patients can manage key personal settings such as language, username, and password through their own dashboard experience.
 
-- Clinics moving from manual workflows to an integrated digital system.
-- Operations teams that need cleaner, near real-time data control.
-- Healthcare services aiming to deliver a more modern patient experience.
+## Competitive Advantages
 
-## Deployment Notes
+### One Platform, Multiple Critical Workflows
 
-- Set `APP_URL` in production to the public application URL so generated QR codes always point to the correct patient scan page.
-- If `APP_URL` is not set, the app now falls back to forwarded host/protocol headers when generating patient scan QR codes.
+HealthEase is not just a dashboard. It connects registration, visits, medical records, billing, and communication into one operational layer.
 
-## Product Vision
+### Faster Front-Desk Execution
 
-To help clinics operate with better structure, faster execution, and stronger service quality through a practical, professional, and scalable digital platform.
+Reception teams can work more efficiently with structured intake, QR support, and clearer visit handling.
+
+### Better Clinical Continuity
+
+Doctors gain quicker access to relevant patient information and visit history, which helps create a more consistent care process.
+
+### Stronger Patient Experience
+
+Patients experience a more organized clinic journey, from registration and scheduling to card access and service updates.
+
+### Scalable Digital Foundation
+
+The system is built on a modern web stack, making it suitable for clinics that want a practical operational system today with room to grow tomorrow.
+
+## Best Fit
+
+Klinik HealthEase is ideal for:
+
+- clinics modernizing from manual or semi-manual workflows
+- front-office teams that need faster service handling
+- healthcare operations that want better data clarity
+- organizations aiming to improve both efficiency and patient trust
+
+## Product Positioning
+
+HealthEase is positioned as a modern clinic operating system: practical enough for day-to-day execution, structured enough for administrative control, and polished enough to reflect a more professional healthcare brand.
+
+It is built to help clinics move beyond basic record keeping and into a workflow that feels faster, cleaner, and more dependable at every touchpoint.

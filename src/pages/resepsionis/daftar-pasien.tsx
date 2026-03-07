@@ -1,6 +1,3 @@
-import fs from "fs/promises";
-import path from "path";
-import QRCode from "qrcode";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import type { GetServerSideProps } from "next";
@@ -9,7 +6,6 @@ import PasswordInput from "@/components/PasswordInput";
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { parseFormBody } from "@/lib/http";
-import { buildPatientScanUrl } from "@/lib/qr";
 import { toSessionUser, type SessionUser } from "@/lib/user-props";
 
 const schema = z.object({
@@ -121,20 +117,13 @@ export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
 
           const noRm = `RM-${ymd().slice(0, 6)}-${createdUser.id.toString().padStart(5, "0")}`;
           const qrToken = crypto.randomUUID();
-          const qrPath = `patient_qr/${qrToken}.png`;
-
-          const publicDir = path.join(process.cwd(), "public", "patient_qr");
-          await fs.mkdir(publicDir, { recursive: true });
-          const scanUrl = buildPatientScanUrl(qrToken, ctx.req.headers);
-          const png = await QRCode.toBuffer(scanUrl, { type: "png", width: 250, margin: 1 });
-          await fs.writeFile(path.join(publicDir, `${qrToken}.png`), png);
 
           await prisma.user.update({
             where: { id: createdUser.id },
             data: {
               noRm,
               qrToken,
-              qrPath,
+              qrPath: null,
             },
           });
 

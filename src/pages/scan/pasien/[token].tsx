@@ -1,5 +1,6 @@
 import Head from "next/head";
 import type { GetServerSideProps } from "next";
+import PatientIdentityCard from "@/components/PatientIdentityCard";
 import { prisma } from "@/lib/prisma";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { getPatientQrUrl } from "@/lib/qr";
@@ -180,62 +181,14 @@ export default function ScanPasienPage({ pasien, pendaftarans, rekamMedisList, c
         <title>Scan Pasien</title>
       </Head>
       <main className="mx-auto max-w-3xl p-6">
-        <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-xl" id="kartu-pasien">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-bold text-blue-700">Kartu Pasien</h2>
-              <div className="text-sm text-gray-500">Tunjukkan ke resepsionis/dokter</div>
-            </div>
-            <img src="/images/logo2.png" className="h-10" alt="Logo" />
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
-            <div className="col-span-2 space-y-2">
-              <div className="text-xs text-gray-500">Nama</div>
-              <div className="font-semibold">{pasien.name}</div>
-
-              <div className="mt-2 text-xs text-gray-500">No. RM</div>
-              <div className="font-semibold tracking-wide">{pasien.no_rm ?? "-"}</div>
-
-              <div className="mt-2 text-xs text-gray-500">No. HP</div>
-              <div className="font-semibold">{pasien.telepon ?? pasien.no_hp ?? "-"}</div>
-
-              <div className="mt-2 text-xs text-gray-500">Alamat</div>
-              <div className="font-semibold">{pasien.alamat ?? "-"}</div>
-            </div>
-
-            <div className="flex items-center justify-center">
-              {qrSrc ? (
-                <img
-                  src={qrSrc}
-                  alt="QR Pasien"
-                  className="h-32 w-32"
-                  data-idx="0"
-                  onError={(event) => {
-                    const img = event.currentTarget;
-                    const current = Number(img.getAttribute("data-idx") ?? "0");
-                    const next = qrCandidates[current + 1];
-                    if (!next) return;
-                    img.setAttribute("data-idx", String(current + 1));
-                    img.src = next;
-                  }}
-                />
-              ) : null}
-            </div>
-          </div>
-
-          <div className="no-print mt-6 flex items-center justify-between">
-            {qrSrc ? (
-              <a href={qrSrc} download className="text-sm text-blue-600 underline">
-                Unduh QR
-              </a>
-            ) : (
-              <span className="text-sm text-gray-400">QR belum tersedia</span>
-            )}
-            <button onClick={() => window.print()} className="rounded bg-blue-600 px-3 py-1 text-sm text-white">
-              Cetak
-            </button>
-          </div>
+        <div className="mb-6">
+          <PatientIdentityCard
+            name={pasien.name}
+            noRm={pasien.no_rm}
+            qrCandidates={qrCandidates}
+            downloadName={`qr-pasien-${pasien.no_rm || pasien.id}.png`}
+            onPrint={() => window.print()}
+          />
         </div>
 
         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow">
@@ -427,30 +380,6 @@ export default function ScanPasienPage({ pasien, pendaftarans, rekamMedisList, c
           </div>
         </div>
       </main>
-
-      <style jsx global>{`
-        @media print {
-          body * {
-            visibility: hidden !important;
-          }
-          #kartu-pasien,
-          #kartu-pasien * {
-            visibility: visible !important;
-          }
-          #kartu-pasien {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            margin: 0 !important;
-            border: 1px solid var(--light-border) !important;
-            box-shadow: none !important;
-          }
-          .no-print {
-            display: none !important;
-          }
-        }
-      `}</style>
     </>
   );
 }
