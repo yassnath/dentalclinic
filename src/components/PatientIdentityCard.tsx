@@ -44,6 +44,23 @@ export default function PatientIdentityCard({
   const qrSrc = candidates[qrIndex] ?? null;
   const effectiveDownloadHref = String(downloadHref ?? qrSrc ?? "").trim() || null;
   const hasActions = Boolean(effectiveDownloadHref) || Boolean(onPrint);
+  const actionNodes = (
+    <>
+      {effectiveDownloadHref ? (
+        <a href={effectiveDownloadHref} download={downloadName} className="patient-identity-card__download">
+          Unduh QR
+        </a>
+      ) : (
+        <span className="patient-identity-card__download patient-identity-card__download--muted">QR belum tersedia</span>
+      )}
+
+      {onPrint ? (
+        <button type="button" onClick={onPrint} className="patient-identity-card__print-btn">
+          {printLabel}
+        </button>
+      ) : null}
+    </>
+  );
 
   return (
     <>
@@ -91,23 +108,17 @@ export default function PatientIdentityCard({
         </div>
 
         {hasActions ? (
-          <div className="patient-identity-card__actions no-print">
-            {effectiveDownloadHref ? (
-              <a href={effectiveDownloadHref} download={downloadName} className="patient-identity-card__download">
-                Unduh QR
-              </a>
-            ) : (
-              <span className="patient-identity-card__download patient-identity-card__download--muted">QR belum tersedia</span>
-            )}
-
-            {onPrint ? (
-              <button type="button" onClick={onPrint} className="patient-identity-card__print-btn">
-                {printLabel}
-              </button>
-            ) : null}
+          <div className="patient-identity-card__actions patient-identity-card__actions--inside no-print">
+            {actionNodes}
           </div>
         ) : null}
       </div>
+
+      {hasActions ? (
+        <div className="patient-identity-card__actions patient-identity-card__actions--outside no-print">
+          {actionNodes}
+        </div>
+      ) : null}
 
       <style jsx global>{`
         .patient-identity-card {
@@ -117,7 +128,7 @@ export default function PatientIdentityCard({
           min-height: 0;
           width: 100%;
           flex-direction: column;
-          justify-content: space-between;
+          justify-content: flex-start;
           gap: 1.4rem;
           overflow: hidden;
           border-radius: 1.6rem;
@@ -139,12 +150,16 @@ export default function PatientIdentityCard({
           gap: 1.25rem;
         }
 
+        .patient-identity-card__top > div {
+          min-width: 0;
+        }
+
         .patient-identity-card__title {
           margin: 0;
           font-size: clamp(2rem, 4.4vw, 2.85rem);
           line-height: 1.05;
           font-weight: 700;
-          color: #60a5fa;
+          color: #ffffff !important;
         }
 
         .patient-identity-card__subtitle {
@@ -251,7 +266,47 @@ export default function PatientIdentityCard({
           justify-content: space-between;
           gap: 1rem;
           padding-top: 0.2rem;
-          padding-bottom: 0.35rem;
+          padding-bottom: 0.7rem;
+        }
+
+        .patient-identity-card__actions--outside {
+          display: none;
+          padding-top: 0.35rem;
+          padding-bottom: 0;
+        }
+
+        @media (min-width: 641px) {
+          .patient-identity-card__actions--inside {
+            transform: translateY(-0.55rem);
+          }
+        }
+
+        @media (min-width: 641px) and (max-width: 1024px) {
+          .patient-identity-card {
+            gap: 1.05rem;
+            padding: 1.35rem;
+          }
+
+          .patient-identity-card__title {
+            font-size: clamp(1.8rem, 4.3vw, 2.2rem);
+          }
+
+          .patient-identity-card__subtitle {
+            font-size: 0.96rem;
+          }
+
+          .patient-identity-card__body {
+            grid-template-columns: minmax(0, 1fr) minmax(8.8rem, 36%);
+            gap: 1.05rem;
+          }
+
+          .patient-identity-card__qr,
+          .patient-identity-card__qr-empty {
+            height: clamp(7.6rem, 18vw, 8.8rem);
+            width: clamp(7.6rem, 18vw, 8.8rem);
+            min-height: clamp(7.6rem, 18vw, 8.8rem);
+            min-width: clamp(7.6rem, 18vw, 8.8rem);
+          }
         }
 
         .patient-identity-card__download {
@@ -292,53 +347,128 @@ export default function PatientIdentityCard({
 
         @media (max-width: 640px) {
           .patient-identity-card {
-            aspect-ratio: auto;
+            aspect-ratio: 85.6 / 53.98;
             min-height: 0;
-            gap: 1.15rem;
-            padding: 1.25rem;
+            gap: 0.82rem;
+            padding: 0.95rem;
+            border-radius: 1.2rem;
+          }
+
+          .patient-identity-card__top {
+            gap: 0.68rem;
           }
 
           .patient-identity-card__title {
-            font-size: 1.85rem;
+            font-size: clamp(1.1rem, 4.8vw, 1.3rem);
+            line-height: 1.04;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
           }
 
           .patient-identity-card__subtitle {
-            font-size: 1rem;
+            margin-top: 0.08rem;
+            font-size: 0.72rem;
+            line-height: 1.16;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
           }
 
           .patient-identity-card__logo {
-            height: 2.9rem;
+            height: 2.15rem;
           }
 
           .patient-identity-card__body {
-            grid-template-columns: 1fr;
-            gap: 1rem;
+            grid-template-columns: minmax(0, 1fr) minmax(6.75rem, 39%);
+            gap: 0.72rem;
           }
 
           .patient-identity-card__qr-col {
-            justify-content: center;
+            justify-content: flex-end;
           }
 
           .patient-identity-card__qr-shell {
-            margin-left: auto;
-            margin-right: auto;
+            margin: 0;
+            padding: 0.4rem;
+            border-radius: 1rem;
+          }
+
+          .patient-identity-card__qr-stage {
+            padding: 0.24rem;
           }
 
           .patient-identity-card__qr,
           .patient-identity-card__qr-empty {
-            height: 8.75rem;
-            width: 8.75rem;
-            min-height: 8.75rem;
-            min-width: 8.75rem;
+            height: clamp(6.4rem, 31vw, 7.6rem);
+            width: clamp(6.4rem, 31vw, 7.6rem);
+            min-height: clamp(6.4rem, 31vw, 7.6rem);
+            min-width: clamp(6.4rem, 31vw, 7.6rem);
+          }
+
+          .patient-identity-card__label {
+            font-size: 0.72rem;
+            line-height: 1.08;
+            white-space: nowrap;
+          }
+
+          .patient-identity-card__label-gap {
+            margin-top: 0.46rem;
+          }
+
+          .patient-identity-card__value {
+            margin-top: 0.24rem;
+            font-size: clamp(0.98rem, 4.3vw, 1.15rem);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+
+          .patient-identity-card__value-wide {
+            letter-spacing: 0.01em;
+            font-size: clamp(0.9rem, 4vw, 1.05rem);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+
+          .patient-identity-card__qr-empty {
+            font-size: 0.72rem;
+            padding: 0.42rem;
           }
 
           .patient-identity-card__actions {
-            flex-direction: column;
-            align-items: stretch;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.55rem;
+            padding-top: 0.08rem;
+            padding-bottom: 0.08rem;
+            transform: none;
+          }
+
+          .patient-identity-card__actions--inside {
+            display: none;
+          }
+
+          .patient-identity-card__actions--outside {
+            display: flex;
+            margin-top: 0.5rem;
+            padding-top: 0.2rem;
+          }
+
+          .patient-identity-card__download {
+            font-size: 0.76rem;
+            white-space: nowrap;
           }
 
           .patient-identity-card__print-btn {
-            width: 100%;
+            width: auto;
+            padding: 0.5rem 0.8rem;
+            border-radius: 0.75rem;
+            font-size: 0.76rem;
+            white-space: nowrap;
+            box-shadow: 0 9px 18px rgba(37, 99, 235, 0.28);
           }
         }
 

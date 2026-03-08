@@ -80,6 +80,61 @@ function resolvePopupFromProps(pageProps: Record<string, unknown>, query: Record
   return { type: "info", message };
 }
 
+function collectHeaderLabels(table: HTMLTableElement) {
+  const labels: string[] = [];
+  const headerRows = table.tHead ? Array.from(table.tHead.rows) : [];
+
+  if (headerRows.length > 0) {
+    const leaf = headerRows[headerRows.length - 1];
+    for (const cell of Array.from(leaf.cells)) {
+      const text = cell.textContent?.replace(/\s+/g, " ").trim() ?? "";
+      labels.push(text.length > 0 ? text : `Kolom ${labels.length + 1}`);
+    }
+    return labels;
+  }
+
+  const firstRow = table.querySelector("tr");
+  if (!firstRow) return labels;
+
+  for (const cell of Array.from(firstRow.cells)) {
+    const text = cell.textContent?.replace(/\s+/g, " ").trim() ?? "";
+    labels.push(text.length > 0 ? text : `Kolom ${labels.length + 1}`);
+  }
+
+  return labels;
+}
+
+function enhanceResponsiveTables() {
+  const tables = Array.from(document.querySelectorAll<HTMLTableElement>("table.responsive-table"));
+
+  for (const table of tables) {
+    const labels = collectHeaderLabels(table);
+    const rowSelectors = ["tbody tr", "tfoot tr"];
+    const rows = rowSelectors.flatMap((selector) => Array.from(table.querySelectorAll<HTMLTableRowElement>(selector)));
+
+    for (const row of rows) {
+      let pointer = 0;
+      const cells = Array.from(row.cells);
+      for (const cell of cells) {
+        const span = Number(cell.getAttribute("colspan") ?? cell.getAttribute("colSpan") ?? "1") || 1;
+        if (!cell.hasAttribute("colspan") && !cell.hasAttribute("colSpan")) {
+          const nextLabel = labels[pointer] ?? `Kolom ${pointer + 1}`;
+          const current = cell.getAttribute("data-label");
+          if (!current || current.trim().length === 0) {
+            cell.setAttribute("data-label", nextLabel);
+          }
+        }
+        pointer += Math.max(1, span);
+      }
+    }
+
+    const scroller = table.closest(".overflow-x-auto");
+    if (scroller) {
+      scroller.classList.add("responsive-table-shell");
+    }
+  }
+}
+
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
   const [popup, setPopup] = useState<PopupState | null>(null);
@@ -258,6 +313,44 @@ export default function App({ Component, pageProps }: AppProps) {
       document.removeEventListener("click", onInternalAnchorClick, true);
     };
   }, [openConfirm, router]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    let rafA = 0;
+    let rafB = 0;
+    let timer = 0;
+    const run = () => enhanceResponsiveTables();
+
+    run();
+    rafA = window.requestAnimationFrame(() => {
+      run();
+      rafB = window.requestAnimationFrame(run);
+    });
+    timer = window.setTimeout(run, 220);
+
+    const onResize = () => run();
+    window.addEventListener("resize", onResize);
+
+    const observer = new MutationObserver((mutations) => {
+      const hasTableInsert = mutations.some((mutation) =>
+        Array.from(mutation.addedNodes).some((node) => {
+          if (!(node instanceof HTMLElement)) return false;
+          return node.matches("table.responsive-table") || Boolean(node.querySelector("table.responsive-table"));
+        }),
+      );
+      if (hasTableInsert) run();
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    return () => {
+      window.cancelAnimationFrame(rafA);
+      window.cancelAnimationFrame(rafB);
+      window.clearTimeout(timer);
+      window.removeEventListener("resize", onResize);
+      observer.disconnect();
+    };
+  }, [router.asPath]);
 
   return (
     <>
