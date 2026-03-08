@@ -64,7 +64,7 @@ export default function CetakKartuPage({ nama, no_rm, qrCandidates }: Props) {
 
       <main className="flex min-h-screen flex-col bg-blue-50 p-6">
         <div className="flex flex-1 items-center justify-center">
-          <div className="mx-auto w-full max-w-lg">
+          <div className="mx-auto w-full max-w-2xl">
             <PatientIdentityCard
               name={nama}
               noRm={no_rm}

@@ -1,4 +1,4 @@
-import Script from "next/script";
+import jsQR from "jsqr";
 import type { FormEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import type { GetServerSideProps } from "next";
@@ -10,6 +10,43 @@ import { toSessionUser, type SessionUser } from "@/lib/user-props";
 type Props = {
   user: SessionUser;
 };
+
+type CameraDevice = {
+  id: string;
+  label: string;
+};
+
+type Html5QrcodeInstance = {
+  start: (
+    cameraId: string,
+    config: {
+      fps?: number;
+      qrbox?: { width: number; height: number };
+      rememberLastUsedCamera?: boolean;
+    },
+    onSuccess: (decodedText: string) => void | Promise<void>,
+    onError: (errorMessage: string) => void,
+  ) => Promise<void>;
+  stop: () => Promise<void>;
+  clear: () => Promise<void>;
+  scanFile: (file: File, showImage?: boolean) => Promise<string>;
+};
+
+type Html5QrcodeModule = {
+  Html5Qrcode: {
+    new (elementId: string): Html5QrcodeInstance;
+    getCameras: () => Promise<CameraDevice[]>;
+  };
+};
+
+async function loadHtml5QrcodeModule(): Promise<Html5QrcodeModule | null> {
+  if (typeof window === "undefined") return null;
+  try {
+    return (await import("html5-qrcode")) as unknown as Html5QrcodeModule;
+  } catch {
+    return null;
+  }
+}
 
 function normalizeToken(token: string) {
   let value = String(token).replace(/[\u200B-\u200D\uFEFF]/g, "").trim().replace(/\s+/g, "");
@@ -44,6 +81,74 @@ function extractToken(rawValue: string) {
   }
 }
 
+function toMonochrome(source: Uint8ClampedArray) {
+  const next = new Uint8ClampedArray(source);
+  for (let i = 0; i < next.length; i += 4) {
+    const luminance = next[i] * 0.299 + next[i + 1] * 0.587 + next[i + 2] * 0.114;
+    const value = luminance > 170 ? 255 : 0;
+    next[i] = value;
+    next[i + 1] = value;
+    next[i + 2] = value;
+    next[i + 3] = 255;
+  }
+  return next;
+}
+
+async function getImageDataFromFile(file: File) {
+  if (typeof window === "undefined") return null;
+
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  if (!context) return null;
+
+  if (typeof createImageBitmap === "function") {
+    const bitmap = await createImageBitmap(file);
+    try {
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      context.drawImage(bitmap, 0, 0);
+      return context.getImageData(0, 0, canvas.width, canvas.height);
+    } finally {
+      bitmap.close();
+    }
+  }
+
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("IMAGE_LOAD_FAILED"));
+      img.src = objectUrl;
+    });
+
+    canvas.width = image.naturalWidth || image.width;
+    canvas.height = image.naturalHeight || image.height;
+    if (!canvas.width || !canvas.height) return null;
+
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    return context.getImageData(0, 0, canvas.width, canvas.height);
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
+async function decodeQrFromImageFile(file: File) {
+  const frame = await getImageDataFromFile(file);
+  if (!frame) return null;
+
+  const direct = jsQR(frame.data, frame.width, frame.height, {
+    inversionAttempts: "attemptBoth",
+  });
+  if (direct?.data) return direct.data;
+
+  const enhanced = toMonochrome(frame.data);
+  const fallback = jsQR(enhanced, frame.width, frame.height, {
+    inversionAttempts: "attemptBoth",
+  });
+  return fallback?.data ?? null;
+}
+
 export const getServerSideProps: GetServerSideProps<Props> = async (ctx) => {
   const auth = await requireAuth(ctx, { roles: ["resepsionis"] });
   if ("redirect" in auth) return auth;
@@ -63,10 +168,24 @@ export default function ResepsionisQrScanPage({ user }: Props) {
   const [cameraReady, setCameraReady] = useState(false);
   const [running, setRunning] = useState(false);
   const [processing, setProcessing] = useState(false);
-  const scannerRef = useRef<any>(null);
+  const scannerRef = useRef<Html5QrcodeInstance | null>(null);
+  const scannerModuleRef = useRef<Promise<Html5QrcodeModule | null> | null>(null);
+
+  const getScannerModule = async () => {
+    if (!scannerModuleRef.current) {
+      scannerModuleRef.current = loadHtml5QrcodeModule();
+    }
+    return scannerModuleRef.current;
+  };
 
   useEffect(() => {
+    let mounted = true;
+    getScannerModule().then((module) => {
+      if (mounted) setCameraReady(Boolean(module));
+    });
+
     return () => {
+      mounted = false;
       if (scannerRef.current) {
         scannerRef.current.stop().catch(() => undefined);
       }
@@ -112,21 +231,21 @@ export default function ResepsionisQrScanPage({ user }: Props) {
   };
 
   const startScan = async () => {
-    const win = window as any;
-    if (!win.Html5Qrcode) {
-      setStatus("Library scanner belum siap.");
+    const scannerModule = await getScannerModule();
+    if (!scannerModule) {
+      setStatus("Scanner kamera tidak tersedia di browser ini.");
       return;
     }
     if (running) return;
 
     setStatus("Memulai kamera...");
     try {
-      const qr = new win.Html5Qrcode("reader");
+      const qr = new scannerModule.Html5Qrcode("reader");
       scannerRef.current = qr;
-      const cameras = await win.Html5Qrcode.getCameras();
+      const cameras = await scannerModule.Html5Qrcode.getCameras();
       const camId =
         cameras && cameras.length
-          ? (cameras.find((camera: any) => /back|rear|environment/i.test(camera.label))?.id ?? cameras[0].id)
+          ? (cameras.find((camera) => /back|rear|environment/i.test(camera.label))?.id ?? cameras[0].id)
           : null;
 
       if (!camId) {
@@ -185,22 +304,29 @@ export default function ResepsionisQrScanPage({ user }: Props) {
       return;
     }
 
-    const win = window as any;
-    if (!win.Html5Qrcode) {
-      setStatus("Library scanner belum siap.");
-      return;
-    }
-
     if (running) await stopScan(true);
 
     setStatus("Mendecode gambar...");
     try {
-      const fileScanner = new win.Html5Qrcode("reader");
-      const decoded = await fileScanner.scanFile(file, true);
-      await fileScanner.clear().catch(() => undefined);
+      let decoded = await decodeQrFromImageFile(file);
+
+      if (!decoded) {
+        const scannerModule = await getScannerModule();
+        if (scannerModule) {
+          try {
+            const fileScanner = new scannerModule.Html5Qrcode("reader");
+            decoded = await fileScanner.scanFile(file, true);
+            await fileScanner.clear().catch(() => undefined);
+          } catch {
+            // noop
+          }
+        }
+      }
+
+      if (!decoded) throw new Error("DECODE_FAILED");
       await handleDecodedValue(decoded, "File QR");
     } catch {
-      setStatus("Gagal decode dari gambar (QR tidak terbaca).");
+      setStatus("Gagal decode dari gambar. Upload QR asli dari kartu pasien atau gambar QR yang lebih jelas.");
     }
   };
 
@@ -309,12 +435,6 @@ export default function ResepsionisQrScanPage({ user }: Props) {
           </div>
         </div>
       </div>
-
-      <Script
-        src="https://unpkg.com/html5-qrcode"
-        strategy="afterInteractive"
-        onLoad={() => setCameraReady(true)}
-      />
     </DashboardLayout>
   );
 }

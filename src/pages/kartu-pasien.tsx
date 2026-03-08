@@ -65,7 +65,7 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (ctx) => 
 export default function KartuPasienPage({ user, unreadNotifCount, qrUrl }: PageProps) {
   return (
     <DashboardLayout user={user} unreadNotifCount={unreadNotifCount}>
-      <div className="mx-auto max-w-lg">
+      <div className="mx-auto max-w-2xl">
         <PatientIdentityCard
           name={user.name}
           noRm={user.no_rm}
